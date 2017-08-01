@@ -1,0 +1,87 @@
+# see https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md
+
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: Example project
+
+Parameters:
+  SecureConfigBucket:
+    Type: String
+    Description: Name of the S3 bucket holding the JWT secure config
+  SecureConfigKeyJwt:
+    Type: String
+    Description: Key of the JWT secure config object in S3
+  SecureConfigKmsArn:
+    Type: String
+    Description: Optional ARN of the KMS encrypting the S3 bucket
+    AllowedPattern: arn:aws:kms:[a-zA-Z_0-9\-]+:\d{12}:key/[a-zA-Z_0-9+=,.@\-_/]+
+  Capacity:
+    Type: String
+    Description: Level of production capacity to use (high or low)
+    AllowedPattern: (high|low)
+    Default: low
+
+Conditions:
+  UseProductionCapacity: !Equals [!Ref Capacity, high]
+
+Resources:
+  Table:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: giftbitUserId
+          AttributeType: S
+        - AttributeName: key
+          AttributeType: N
+      KeySchema:
+        - AttributeName: giftbitUserId
+          KeyType: HASH
+        - AttributeName: key
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: !If [UseProductionCapacity, 70, 8]
+        WriteCapacityUnits: !If [UseProductionCapacity, 35, 8]
+
+  HelloWorldFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../dist/kvs/kvs.zip
+      Handler: index.handler
+      Runtime: nodejs6.10
+      MemorySize: 128
+      Timeout: 30 # seconds, 300 max
+      Environment:
+        Variables:
+          DDB_TABLE: !Ref Table
+          SECURE_CONFIG_BUCKET: !Ref SecureConfigBucket
+          SECURE_CONFIG_KEY_JWT: !Ref SecureConfigKeyJwt
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:BatchGetItem
+                - dynamodb:DescribeTable
+                - dynamodb:DeleteItem
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:Query
+              Resource:
+                - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Table}"
+                - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Table}/*"
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+              Resource:
+                - !Sub "arn:aws:s3:::${SecureConfigBucket}/${SecureConfigKeyJwt}"
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+              Resource:
+                - !Ref SecureConfigKmsArn
+              Condition:
+                StringLike:
+                  "kms:ViaService":
+                    !Sub "s3.${AWS::Region}.amazonaws.com"
+                  "kms:EncryptionContext:aws:s3:arn":
+                    !Sub "arn:aws:s3:::${SecureConfigBucket}/*"
