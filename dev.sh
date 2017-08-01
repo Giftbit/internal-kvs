@@ -5,14 +5,13 @@
 
 # The name of your CloudFormation stack.  Two developers can share a stack by
 # sharing this value, or have their own with different values.
-STACK_NAME="MyProject"
+STACK_NAME="Kvs-Dev"
 
 # The name of an S3 bucket on your account to hold deployment artifacts.
-BUILD_ARTIFACT_BUCKET="mys3artifactbucket"
+BUILD_ARTIFACT_BUCKET="giftbit-buildartifacts-preprod"
 
 # Parameter values for the sam template.  see: `aws cloudformation deploy help`
-PARAMETER_OVERRIDES=""
-#PARAMETER_OVERRIDES="--parameter-overrides KeyOne=value KeyTwo=value"
+PARAMETER_OVERRIDES="--parameter-overrides SecureConfigBucket=configuration-currency-preprod SecureConfigKeyJwt=authentication_badge_key.json SecureConfigKmsArn=arn:aws:kms:us-west-2:784593521445:key/8a12197b-b84a-4175-80d7-0ce6ec63932a Capacity=low"
 
 
 set -eu

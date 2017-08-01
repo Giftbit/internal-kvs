@@ -50,6 +50,10 @@ router.route("/v1/storage/{key}")
         const auth: giftbitRoutes.jwtauth.AuthorizationBadge = evt.meta["auth"];
         auth.requireIds("giftbitUserId");
 
+        if (JSON.stringify(evt.body).length > 10 * 1024) {
+            throw new RestError(httpStatusCode.clientError.PAYLOAD_TOO_LARGE, "Payload too large.  The max value size is 10 KiB.");
+        }
+
         await storedItemAccess.setStoredItem({
             giftbitUserId: auth.giftbitUserId,
             key: evt.pathParameters.key,
