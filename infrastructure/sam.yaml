@@ -42,7 +42,7 @@ Resources:
         ReadCapacityUnits: !If [UseProductionCapacity, 70, 8]
         WriteCapacityUnits: !If [UseProductionCapacity, 35, 8]
 
-  HelloWorldFunction:
+  KvsFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../dist/kvs/kvs.zip
