@@ -24,6 +24,9 @@ router.route("/v1/storage")
         return {
             body: {
                 keys: keys
+            },
+            headers: {
+                "Cache-Control": "no-cache, no-store, must-revalidate"
             }
         };
     });
@@ -40,7 +43,10 @@ router.route("/v1/storage/{key}")
         }
 
         return {
-            body: storedItem.value
+            body: storedItem.value,
+            headers: {
+                "Cache-Control": "no-cache, no-store, must-revalidate"
+            }
         };
     });
 
