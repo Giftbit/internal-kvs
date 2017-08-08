@@ -32,7 +32,7 @@ Resources:
         - AttributeName: giftbitUserId
           AttributeType: S
         - AttributeName: key
-          AttributeType: N
+          AttributeType: S
       KeySchema:
         - AttributeName: giftbitUserId
           KeyType: HASH
@@ -85,3 +85,9 @@ Resources:
                     !Sub "s3.${AWS::Region}.amazonaws.com"
                   "kms:EncryptionContext:aws:s3:arn":
                     !Sub "arn:aws:s3:::${SecureConfigBucket}/*"
+      Events:
+        RestApi:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
