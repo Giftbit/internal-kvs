@@ -4,7 +4,7 @@ import * as dynameh from "dynameh";
 import {httpStatusCode, RestError} from "cassava";
 import {StoredItem} from "./StoredItem";
 
-export const debug = true;
+export const debug = false;
 
 export const dynamodb = new aws.DynamoDB({
     apiVersion: "2012-08-10",
@@ -38,10 +38,10 @@ export async function getStoredItem(giftbitUserId: string, key: string): Promise
     debug && console.log("getRequest=", getRequest);
 
     const getResponse = await dynamodb.getItem(getRequest).promise();
-    debug && console.log("getResponse=", getResponse);
+    debug && console.log("getResponse=", JSON.stringify(getResponse));
 
     const storedItem = dynameh.responseUnwrapper.unwrapGetOutput(getResponse) as StoredItem;
-    debug && console.log("storedItem=", storedItem);
+    debug && console.log("storedItem=", JSON.stringify(storedItem));
 
     return storedItem;
 }
@@ -53,20 +53,20 @@ export async function setStoredItem(item: StoredItem): Promise<void> {
     validateKey(item.key);
 
     const putRequest = dynameh.requestBuilder.buildPutInput(tableSchema, item);
-    debug && console.log("putRequest=", putRequest);
+    debug && console.log("putRequest=", JSON.stringify(putRequest));
 
     const putResponse = await dynamodb.putItem(putRequest).promise();
-    debug && console.log("putResponse=", putResponse);
+    debug && console.log("putResponse=", JSON.stringify(putResponse));
 }
 
 export async function deleteItem(giftbitUserId: string, key: string): Promise<void> {
     validateKey(key);
 
     const deleteRequest = dynameh.requestBuilder.buildDeleteInput(tableSchema, giftbitUserId, key);
-    debug && console.log("deleteRequest=", deleteRequest);
+    debug && console.log("deleteRequest=", JSON.stringify(deleteRequest));
 
     const deleteResponse = await dynamodb.deleteItem(deleteRequest).promise();
-    debug && console.log("deleteResponse=", deleteResponse);
+    debug && console.log("deleteResponse=", JSON.stringify(deleteResponse));
 }
 
 function validateKey(key: string): void {
