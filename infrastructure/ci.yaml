@@ -5,7 +5,7 @@ Parameters:
   ProjectName:
     Type: String
     Description: The name of the project being built.  This name will be used on a number of resources.
-    Default: MyAwesomeProject
+    Default: KVS
   ProjectParameterOverrides:
     Type: String
     Description: JSON string for the parameters of the project template.
@@ -18,11 +18,11 @@ Parameters:
   GitHubRepoOwner:
     Type: String
     Description: GitHub repo owner.
-    Default: mycompany
+    Default: Giftbit
   GitHubRepo:
     Type: String
     Description: GitHub git repo.
-    Default: myreponame
+    Default: giftbit-kvs
   GitHubBranch:
     Type: String
     Description: Git branch to build off of.
@@ -30,6 +30,18 @@ Parameters:
   GitHubBranchDest:
     Type: String
     Description: Git branch to pull request into after a successful deploy.  Leave empty for no action.
+    Default: ""
+  CodeBuildImageNodeSSH:
+    Type: String
+    Description: Name of the docker image to build from.
+    Default: ""
+  CiKeysAccessRoleArn:
+    Type: String
+    Description: ARN for the role that can access our CI SSH keys bucket.
+    Default: ""
+  CiKeysBucketName:
+    Type: String
+    Description: S3 bucket with our CI SSH keys.
     Default: ""
 
 Conditions:
@@ -81,6 +93,10 @@ Resources:
             Resource:
               - !Sub "arn:aws:s3:::codepipeline-${AWS::Region}-*/*"
               - !Sub "arn:aws:s3:::${DeploymentArtifactBucket}/*"
+          - Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Resource: !ImportValue CiKeysAccessRoleArn
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -93,10 +109,14 @@ Resources:
         # ComputeType options: BUILD_GENERAL1_SMALL, BUILD_GENERAL1_MEDIUM, BUILD_GENERAL1_LARGE
         ComputeType: BUILD_GENERAL1_SMALL
 #        Image: aws/codebuild/nodejs:7.0.0
-        Image: !ImportValue CodebuildImageNodeSSH
+        Image: !Ref CodeBuildImageNodeSSH
         EnvironmentVariables:
           - Name: BUILD_ARTIFACT_BUCKET
             Value: !Ref DeploymentArtifactBucket
+          - Name: CI_KEY_BUCKET
+            Value: !Ref CiKeysBucketName
+          - Name: CI_KEY_ACCESS_ROLE
+            Value: !Ref CiKeysAccessRoleArn
       Source:
         Type: CODEPIPELINE
       TimeoutInMinutes: 10
