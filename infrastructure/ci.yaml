@@ -96,7 +96,7 @@ Resources:
           - Effect: Allow
             Action:
               - sts:AssumeRole
-            Resource: !ImportValue CiKeysAccessRoleArn
+            Resource: !Ref CiKeysAccessRoleArn
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
