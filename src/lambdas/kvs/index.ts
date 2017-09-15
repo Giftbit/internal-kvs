@@ -7,6 +7,7 @@ import * as storedItemAccess from "./storedItemAccess";
 export const router = new cassava.Router();
 
 router.route(new cassava.routes.LoggingRoute());
+router.route(new giftbitRoutes.HealthCheckRoute("/v1/storage/healthCheck"));
 
 const secureConfigBucket = process.env["SECURE_CONFIG_BUCKET"] || console.error("Env SECURE_CONFIG_BUCKET is required to run this lambda");
 const secureConfigAuthBadgeKey = process.env["SECURE_CONFIG_KEY_JWT"] || console.error("Env SECURE_CONFIG_KEY_JWT is required to run this lambda");
