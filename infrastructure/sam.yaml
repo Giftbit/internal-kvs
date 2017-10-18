@@ -2,7 +2,7 @@
 
 AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
-Description: Example project
+Description: REST key-value store
 
 Parameters:
   SecureConfigBucket:
@@ -42,6 +42,37 @@ Resources:
         ReadCapacityUnits: !If [UseProductionCapacity, 70, 8]
         WriteCapacityUnits: !If [UseProductionCapacity, 35, 8]
 
+  StoredItemEncryptionKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub "${AWS::StackName} stored item encryption key"
+      KeyPolicy:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS:
+                !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - kms:*
+            Resource: "*"
+          - Effect: Allow
+            Principal:
+              AWS:
+                !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-KvsFunction-*"
+  StoredItemEncryptionKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}-StoredItemEncryptionKey"
+      TargetKeyId: !Ref StoredItemEncryptionKey
+
   KvsFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -55,6 +86,7 @@ Resources:
           DDB_TABLE: !Ref Table
           SECURE_CONFIG_BUCKET: !Ref SecureConfigBucket
           SECURE_CONFIG_KEY_JWT: !Ref SecureConfigKeyJwt
+          STORED_ITEM_ENCRYPTION_KEY_ID: !Ref StoredItemEncryptionKey
       Policies:
         - Version: 2012-10-17
           Statement:
@@ -69,6 +101,15 @@ Resources:
               Resource:
                 - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Table}"
                 - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Table}/*"
+            - Effect: Allow
+              Action:
+                - kms:Encrypt
+                - kms:Decrypt
+                - kms:ReEncrypt*
+                - kms:GenerateDataKey*
+                - kms:DescribeKey
+              Resource:
+                - !GetAtt StoredItemEncryptionKey.Arn
             - Effect: Allow
               Action:
                 - s3:GetObject
