@@ -5,13 +5,18 @@
 
 # The name of your CloudFormation stack.  Two developers can share a stack by
 # sharing this value, or have their own with different values.
-STACK_NAME="Kvs-Dev"
+STACK_NAME="dev-Kvs"
 
 # The name of an S3 bucket on your account to hold deployment artifacts.
-BUILD_ARTIFACT_BUCKET="giftbit-buildartifacts-preprod"
+BUILD_ARTIFACT_BUCKET="dev-lightrailkvs-3z0wyor-deploymentartifactbucket-1kw5tu5umtqqe"
 
 # Parameter values for the sam template.  see: `aws cloudformation deploy help`
-PARAMETER_OVERRIDES="--parameter-overrides SecureConfigBucket=configuration-currency-preprod SecureConfigKeyJwt=authentication_badge_key.json SecureConfigKmsArn=arn:aws:kms:us-west-2:784593521445:key/8a12197b-b84a-4175-80d7-0ce6ec63932a Capacity=low"
+PARAMETER_OVERRIDES="--parameter-overrides"
+PARAMETER_OVERRIDES+=" SecureConfigBucket=dev-lightrailsecureconfig-1q7bltwyiihpq-bucket-id162gq711cc"
+PARAMETER_OVERRIDES+=" SecureConfigKeyJwt=authentication_badge_key.json"
+PARAMETER_OVERRIDES+=" SecureConfigKmsArn=arn:aws:kms:us-west-2:757264843183:key/5240d853-a89f-4510-82ba-386bf2b977dc"
+PARAMETER_OVERRIDES+=" StoredItemEncryptionKeyId=111111"
+PARAMETER_OVERRIDES+=" Capacity=low"
 
 
 set -eu

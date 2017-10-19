@@ -1,8 +1,8 @@
-import "babel-polyfill";
 import * as aws from "aws-sdk";
 import * as dynameh from "dynameh";
 import {httpStatusCode, RestError} from "cassava";
 import {StoredItem} from "./StoredItem";
+import {specialKeys} from "./specialKeys";
 
 export const debug = false;
 
@@ -70,6 +70,10 @@ export async function deleteItem(giftbitUserId: string, key: string): Promise<vo
 }
 
 function validateKey(key: string): void {
+    if (specialKeys[key]) {
+        // Special keys are always by definition valid.
+        return;
+    }
     if (!key || key.length < 4) {
         throw new RestError(httpStatusCode.clientError.UNPROCESSABLE_ENTITY, "A key must be at least 4 characters.");
     }
