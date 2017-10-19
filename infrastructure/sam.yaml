@@ -11,6 +11,9 @@ Parameters:
   SecureConfigKeyJwt:
     Type: String
     Description: Key of the JWT secure config object in S3
+  SecureConfigKeyRoleDefinitions:
+    Type: String
+    Description: Key of the role definitions secure config object in S3
   SecureConfigKmsArn:
     Type: String
     Description: Optional ARN of the KMS encrypting the S3 bucket
@@ -59,6 +62,7 @@ Resources:
           DDB_TABLE: !Ref Table
           SECURE_CONFIG_BUCKET: !Ref SecureConfigBucket
           SECURE_CONFIG_KEY_JWT: !Ref SecureConfigKeyJwt
+          SECURE_CONFIG_KEY_ROLE_DEFINITIONS: !Ref SecureConfigKeyRoleDefinitions
           STORED_ITEM_ENCRYPTION_KEY_ID: !Ref StoredItemEncryptionKeyId
       Policies:
         - Version: 2012-10-17
@@ -87,6 +91,7 @@ Resources:
                 - s3:GetObject
               Resource:
                 - !Sub "arn:aws:s3:::${SecureConfigBucket}/${SecureConfigKeyJwt}"
+                - !Sub "arn:aws:s3:::${SecureConfigBucket}/${SecureConfigKeyRoleDefinitions}"
             - Effect: Allow
               Action:
                 - kms:Decrypt

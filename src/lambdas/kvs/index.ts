@@ -11,10 +11,9 @@ export const router = new cassava.Router();
 router.route(new cassava.routes.LoggingRoute());
 router.route(new giftbitRoutes.HealthCheckRoute("/v1/storage/healthCheck"));
 
-const secureConfigBucket = process.env["SECURE_CONFIG_BUCKET"] || console.error("Env SECURE_CONFIG_BUCKET is required to run this lambda");
-const secureConfigAuthBadgeKey = process.env["SECURE_CONFIG_KEY_JWT"] || console.error("Env SECURE_CONFIG_KEY_JWT is required to run this lambda");
-const authBadgeKeyPromise = giftbitRoutes.secureConfig.fetchFromS3<giftbitRoutes.secureConfig.AuthenticationConfig>(secureConfigBucket as string, secureConfigAuthBadgeKey as string);
-router.route(new giftbitRoutes.jwtauth.JwtAuthorizationRoute(authBadgeKeyPromise));
+const authConfigPromise = giftbitRoutes.secureConfig.fetchFromS3ByEnvVar<any>("SECURE_CONFIG_BUCKET", "SECURE_CONFIG_KEY_JWT");
+const roleDefinitionsPromise = giftbitRoutes.secureConfig.fetchFromS3ByEnvVar<any>("SECURE_CONFIG_BUCKET", "SECURE_CONFIG_KEY_ROLE_DEFINITIONS");
+router.route(new giftbitRoutes.jwtauth.JwtAuthorizationRoute(authConfigPromise, roleDefinitionsPromise));
 
 router.route("/v1/storage")
     .method("GET")

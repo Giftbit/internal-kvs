@@ -17,7 +17,6 @@ export async function encryptStoredItem(auth: giftbitRoutes.jwtauth.Authorizatio
         KeyId: process.env["STORED_ITEM_ENCRYPTION_KEY_ID"],
         Plaintext: JSON.stringify(storedItem.value)
     }).promise();
-    console.log("encryptRes=", encryptRes);
 
     if (encryptRes.CiphertextBlob instanceof Buffer) {
         return {
@@ -26,7 +25,6 @@ export async function encryptStoredItem(auth: giftbitRoutes.jwtauth.Authorizatio
             value: encryptRes.CiphertextBlob.toString("base64")
         };
     }
-
     throw new Error("Unhandled CiphertextBlob type.");
 }
 
@@ -38,7 +36,6 @@ export async function dencryptStoredItem(auth: giftbitRoutes.jwtauth.Authorizati
     const decryptRes = await kms.decrypt({
         CiphertextBlob: Buffer.from(storedItem.value as string, "base64")
     }).promise();
-    console.log("decryptRes=", decryptRes);
 
     return {
         ...storedItem,
