@@ -49,22 +49,12 @@ Resources:
       KeyPolicy:
         Version: 2012-10-17
         Statement:
-          -
-            Effect: Allow
+          - Effect: Allow
             Principal:
               AWS:
                 !Sub "arn:aws:iam::${AWS::AccountId}:root"
             Action:
               - kms:*
-            Resource: "*"
-          - Effect: Allow
-            Principal: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-KvsFunction-*"
-            Action:
-              - kms:Encrypt
-              - kms:Decrypt
-              - kms:ReEncrypt*
-              - kms:GenerateDataKey*
-              - kms:DescribeKey
             Resource: "*"
   StoredItemEncryptionKeyAlias:
     Type: AWS::KMS::Alias
