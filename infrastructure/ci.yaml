@@ -272,10 +272,6 @@ Resources:
             Action:
               - apigateway:*
             Resource: !Sub "arn:aws:apigateway:${AWS::Region}::/*"
-          - Effect: Allow
-            Action:
-              - kms:*
-            Resource: "*"
   CodePipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:

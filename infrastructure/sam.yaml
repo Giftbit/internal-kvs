@@ -15,6 +15,10 @@ Parameters:
     Type: String
     Description: Optional ARN of the KMS encrypting the S3 bucket
     AllowedPattern: arn:aws:kms:[a-zA-Z_0-9\-]+:\d{12}:key/[a-zA-Z_0-9+=,.@\-_/]+
+  StoredItemEncryptionKeyId:
+    Type: String
+    Description: ID of the KMS stored items will be encrypted with
+    AllowedPattern: "[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}"
   Capacity:
     Type: String
     Description: Level of production capacity to use (high or low)
@@ -42,26 +46,6 @@ Resources:
         ReadCapacityUnits: !If [UseProductionCapacity, 70, 8]
         WriteCapacityUnits: !If [UseProductionCapacity, 35, 8]
 
-  StoredItemEncryptionKey:
-    Type: AWS::KMS::Key
-    Properties:
-      Description: !Sub "${AWS::StackName} stored item encryption key"
-      KeyPolicy:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              AWS:
-                !Sub "arn:aws:iam::${AWS::AccountId}:root"
-            Action:
-              - kms:*
-            Resource: "*"
-  StoredItemEncryptionKeyAlias:
-    Type: AWS::KMS::Alias
-    Properties:
-      AliasName: !Sub "alias/${AWS::StackName}-StoredItemEncryptionKey"
-      TargetKeyId: !Ref StoredItemEncryptionKey
-
   KvsFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -75,7 +59,7 @@ Resources:
           DDB_TABLE: !Ref Table
           SECURE_CONFIG_BUCKET: !Ref SecureConfigBucket
           SECURE_CONFIG_KEY_JWT: !Ref SecureConfigKeyJwt
-          STORED_ITEM_ENCRYPTION_KEY_ID: !Ref StoredItemEncryptionKey
+          STORED_ITEM_ENCRYPTION_KEY_ID: !Ref StoredItemEncryptionKeyId
       Policies:
         - Version: 2012-10-17
           Statement:
@@ -95,10 +79,9 @@ Resources:
                 - kms:Encrypt
                 - kms:Decrypt
                 - kms:ReEncrypt*
-                - kms:GenerateDataKey*
                 - kms:DescribeKey
               Resource:
-                - !GetAtt StoredItemEncryptionKey.Arn
+                - !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${StoredItemEncryptionKeyId}"
             - Effect: Allow
               Action:
                 - s3:GetObject
