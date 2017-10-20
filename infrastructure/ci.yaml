@@ -263,6 +263,15 @@ Resources:
             Resource: "*"
           - Effect: Allow
             Action:
+              - lambda:ListTags
+              - lambda:TagResource
+              - lambda:UntagResource
+              - dynamodb:ListTags
+              - dynamodb:TagResource
+              - dynamodb:UntagResource
+            Resource: "*"
+          - Effect: Allow
+            Action:
               - dynamodb:CreateTable
               - dynamodb:DeleteTable
               - dynamodb:DescribeTable
