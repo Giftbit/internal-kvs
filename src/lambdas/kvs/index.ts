@@ -21,12 +21,9 @@ router.route("/v1/storage")
         const auth: giftbitRoutes.jwtauth.AuthorizationBadge = evt.meta["auth"];
         auth.requireIds("giftbitUserId");
 
-        let keys = await storedItemAccess.listKeys(auth.giftbitUserId);
-        keys = keys.filter(key => !specialKeys[key]);
-
         return {
             body: {
-                keys: keys
+                keys: await storedItemAccess.listKeys(auth.giftbitUserId)
             },
             headers: {
                 "Cache-Control": "no-cache, no-store, must-revalidate"
