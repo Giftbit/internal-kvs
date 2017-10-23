@@ -8,7 +8,7 @@
 STACK_NAME="dev-Kvs"
 
 # The name of an S3 bucket on your account to hold deployment artifacts.
-BUILD_ARTIFACT_BUCKET="dev-lightrailkvs-3z0wyor-deploymentartifactbucket-1kw5tu5umtqqe"
+BUILD_ARTIFACT_BUCKET="dev-lightrailkvs-d4ig0rg-deploymentartifactbucket-5g13j6uejhl1"
 
 # Parameter values for the sam template.  see: `aws cloudformation deploy help`
 PARAMETER_OVERRIDES="--parameter-overrides"
