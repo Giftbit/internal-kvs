@@ -28,7 +28,7 @@ export async function listKeys(giftbitUserId: string): Promise<string[]> {
     debug && console.log("queryResponse=", queryResponse);
 
     const storedItems = dynameh.responseUnwrapper.unwrapQueryOutput(queryResponse) as StoredItem[];
-    return storedItems.map(item => item.key);
+    return storedItems.map(item => item.key).filter(key => !specialKeys[key]);
 }
 
 export async function getStoredItem(giftbitUserId: string, key: string): Promise<StoredItem> {
