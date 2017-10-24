@@ -2,7 +2,7 @@
 
 AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
-Description: Example project
+Description: REST key-value store
 
 Parameters:
   SecureConfigBucket:
@@ -11,10 +11,17 @@ Parameters:
   SecureConfigKeyJwt:
     Type: String
     Description: Key of the JWT secure config object in S3
+  SecureConfigKeyRoleDefinitions:
+    Type: String
+    Description: Key of the role definitions secure config object in S3
   SecureConfigKmsArn:
     Type: String
     Description: Optional ARN of the KMS encrypting the S3 bucket
     AllowedPattern: arn:aws:kms:[a-zA-Z_0-9\-]+:\d{12}:key/[a-zA-Z_0-9+=,.@\-_/]+
+  StoredItemEncryptionKeyId:
+    Type: String
+    Description: ID of the KMS stored items will be encrypted with
+    AllowedPattern: "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
   Capacity:
     Type: String
     Description: Level of production capacity to use (high or low)
@@ -41,6 +48,11 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: !If [UseProductionCapacity, 70, 8]
         WriteCapacityUnits: !If [UseProductionCapacity, 35, 8]
+      Tags:
+        - Key: ShortName
+          Value: Table
+        - Key: Service
+          Value: KVS
 
   KvsFunction:
     Type: AWS::Serverless::Function
@@ -55,6 +67,8 @@ Resources:
           DDB_TABLE: !Ref Table
           SECURE_CONFIG_BUCKET: !Ref SecureConfigBucket
           SECURE_CONFIG_KEY_JWT: !Ref SecureConfigKeyJwt
+          SECURE_CONFIG_KEY_ROLE_DEFINITIONS: !Ref SecureConfigKeyRoleDefinitions
+          STORED_ITEM_ENCRYPTION_KEY_ID: !Ref StoredItemEncryptionKeyId
       Policies:
         - Version: 2012-10-17
           Statement:
@@ -71,9 +85,18 @@ Resources:
                 - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Table}/*"
             - Effect: Allow
               Action:
+                - kms:Encrypt
+                - kms:Decrypt
+                - kms:ReEncrypt*
+                - kms:DescribeKey
+              Resource:
+                - !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${StoredItemEncryptionKeyId}"
+            - Effect: Allow
+              Action:
                 - s3:GetObject
               Resource:
                 - !Sub "arn:aws:s3:::${SecureConfigBucket}/${SecureConfigKeyJwt}"
+                - !Sub "arn:aws:s3:::${SecureConfigBucket}/${SecureConfigKeyRoleDefinitions}"
             - Effect: Allow
               Action:
                 - kms:Decrypt
@@ -85,6 +108,9 @@ Resources:
                     !Sub "s3.${AWS::Region}.amazonaws.com"
                   "kms:EncryptionContext:aws:s3:arn":
                     !Sub "arn:aws:s3:::${SecureConfigBucket}/*"
+      Tags:
+        ShortName: KvsFunction
+        Service: KVS
       Events:
         RestApi:
           Type: Api
