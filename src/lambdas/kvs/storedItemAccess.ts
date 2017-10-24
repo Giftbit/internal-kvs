@@ -1,8 +1,8 @@
-import "babel-polyfill";
 import * as aws from "aws-sdk";
 import * as dynameh from "dynameh";
 import {httpStatusCode, RestError} from "cassava";
 import {StoredItem} from "./StoredItem";
+import {specialKeys} from "./specialKeys";
 
 export const debug = false;
 
@@ -28,7 +28,7 @@ export async function listKeys(giftbitUserId: string): Promise<string[]> {
     debug && console.log("queryResponse=", queryResponse);
 
     const storedItems = dynameh.responseUnwrapper.unwrapQueryOutput(queryResponse) as StoredItem[];
-    return storedItems.map(item => item.key);
+    return storedItems.map(item => item.key).filter(key => !specialKeys[key]);
 }
 
 export async function getStoredItem(giftbitUserId: string, key: string): Promise<StoredItem> {
@@ -70,6 +70,10 @@ export async function deleteItem(giftbitUserId: string, key: string): Promise<vo
 }
 
 function validateKey(key: string): void {
+    if (specialKeys[key]) {
+        // Special keys are always by definition valid.
+        return;
+    }
     if (!key || key.length < 4) {
         throw new RestError(httpStatusCode.clientError.UNPROCESSABLE_ENTITY, "A key must be at least 4 characters.");
     }
