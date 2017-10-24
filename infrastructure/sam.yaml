@@ -48,6 +48,11 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: !If [UseProductionCapacity, 70, 8]
         WriteCapacityUnits: !If [UseProductionCapacity, 35, 8]
+      Tags:
+        - Key: ShortName
+          Value: Table
+        - Key: Service
+          Value: KVS
 
   KvsFunction:
     Type: AWS::Serverless::Function
@@ -103,6 +108,9 @@ Resources:
                     !Sub "s3.${AWS::Region}.amazonaws.com"
                   "kms:EncryptionContext:aws:s3:arn":
                     !Sub "arn:aws:s3:::${SecureConfigBucket}/*"
+      Tags:
+        ShortName: KvsFunction
+        Service: KVS
       Events:
         RestApi:
           Type: Api
