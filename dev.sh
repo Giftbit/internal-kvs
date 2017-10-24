@@ -16,7 +16,7 @@ PARAMETER_OVERRIDES+=" SecureConfigBucket=dev-lightrailsecureconfig-1q7bltwyiihp
 PARAMETER_OVERRIDES+=" SecureConfigKeyJwt=authentication_badge_key.json"
 PARAMETER_OVERRIDES+=" SecureConfigKeyRoleDefinitions=RoleDefinitions.json"
 PARAMETER_OVERRIDES+=" SecureConfigKmsArn=arn:aws:kms:us-west-2:757264843183:key/5240d853-a89f-4510-82ba-386bf2b977dc"
-PARAMETER_OVERRIDES+=" StoredItemEncryptionKeyId=29bbfae5-9cb2-40b7-91fe-61fd970d8a73"
+PARAMETER_OVERRIDES+=" StoredItemEncryptionKeyId=998d77cc-e67b-4fb1-9418-61e7d8775423"
 PARAMETER_OVERRIDES+=" Capacity=low"
 
 
