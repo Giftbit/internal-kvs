@@ -3,8 +3,8 @@ import {SpecialKey} from "./SpecialKey";
 export const specialKeys: {[key: string]: SpecialKey} = {
     jwtSecret: {
         encrypted: true,
-        readScopes: ["lightrailV1:token:read"],
-        writeScopes: ["lightrailV1:token:write"]
+        readScopes: ["lightrailV1:sharedSecret:read"],
+        writeScopes: ["lightrailV1:sharedSecret:write"]
     },
     stripeApiKey: {
         encrypted: true,
