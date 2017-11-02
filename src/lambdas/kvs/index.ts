@@ -97,7 +97,12 @@ router.route("/v1/storage/{key}")
         const auth: giftbitRoutes.jwtauth.AuthorizationBadge = evt.meta["auth"];
         auth.requireIds("giftbitUserId");
 
-        await storedItemAccess.deleteItem(auth.giftbitUserId, evt.pathParameters.key);
+        const key = evt.pathParameters.key;
+        if (specialKeys[key] && specialKeys[key].writeScopes) {
+            auth.requireScopes(...specialKeys[key].writeScopes);
+        }
+
+        await storedItemAccess.deleteItem(auth.giftbitUserId, key);
 
         return {
             body: {
