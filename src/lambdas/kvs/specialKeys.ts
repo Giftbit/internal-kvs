@@ -13,12 +13,6 @@ export const specialKeys: {[key: string]: SpecialKey} = {
         readScopes: ["lightrailV1:stripeConnect:read"],
         writeScopes: ["lightrailV1:stripeConnect:write"]
     },
-    stripeOauth: {
-        encrypted: true,
-        hidden: true,
-        readScopes: ["lightrailV1:stripeConnect:read"],
-        writeScopes: ["lightrailV1:stripeConnect:write"]
-    },
     turnkeyPublicConfig: {
         encrypted: false,
         hidden: false,
