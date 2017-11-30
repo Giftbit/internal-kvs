@@ -5,9 +5,24 @@ Transform: AWS::Serverless-2016-10-31
 Description: REST key-value store
 
 Parameters:
+  Capacity:
+    Type: String
+    Description: Level of production capacity to use (high or low)
+    AllowedPattern: (high|low)
+    Default: low
+  LightrailDomain:
+    Type: String
+    Description: The domain of the Lightrail REST API
+    AllowedPattern: (\w+\.)+\w{3}
+  PathToMerchantSharedSecret:
+    Type: String
+    Description: Path to merchant shared jwt secret
   SecureConfigBucket:
     Type: String
     Description: Name of the S3 bucket holding the JWT secure config
+  SecureConfigKeyAssumeStorageScopeToken:
+    Type: String
+    Description: Name of the Assume Auth token in S3 that can be used to access merchant secret key in KVS
   SecureConfigKeyJwt:
     Type: String
     Description: Key of the JWT secure config object in S3
@@ -22,11 +37,6 @@ Parameters:
     Type: String
     Description: ID of the KMS stored items will be encrypted with
     AllowedPattern: "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
-  Capacity:
-    Type: String
-    Description: Level of production capacity to use (high or low)
-    AllowedPattern: (high|low)
-    Default: low
 
 Conditions:
   UseProductionCapacity: !Equals [!Ref Capacity, high]
@@ -65,7 +75,10 @@ Resources:
       Environment:
         Variables:
           DDB_TABLE: !Ref Table
+          LIGHTRAIL_DOMAIN: !Ref LightrailDomain
+          PATH_TO_MERCHANT_SHARED_SECRET: !Ref PathToMerchantSharedSecret
           SECURE_CONFIG_BUCKET: !Ref SecureConfigBucket
+          SECURE_CONFIG_KEY_ASSUME_STORAGE_SCOPE_TOKEN: !Ref SecureConfigKeyAssumeStorageScopeToken
           SECURE_CONFIG_KEY_JWT: !Ref SecureConfigKeyJwt
           SECURE_CONFIG_KEY_ROLE_DEFINITIONS: !Ref SecureConfigKeyRoleDefinitions
           STORED_ITEM_ENCRYPTION_KEY_ID: !Ref StoredItemEncryptionKeyId
@@ -95,6 +108,7 @@ Resources:
               Action:
                 - s3:GetObject
               Resource:
+                - !Sub "arn:aws:s3:::${SecureConfigBucket}/${SecureConfigKeyAssumeStorageScopeToken}"
                 - !Sub "arn:aws:s3:::${SecureConfigBucket}/${SecureConfigKeyJwt}"
                 - !Sub "arn:aws:s3:::${SecureConfigBucket}/${SecureConfigKeyRoleDefinitions}"
             - Effect: Allow
