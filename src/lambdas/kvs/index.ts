@@ -8,7 +8,7 @@ import {specialKeys} from "./specialKeys";
 
 export const router = new cassava.Router();
 
-router.route(new cassava.routes.LoggingRoute());
+router.route(new cassava.routes.LoggingRoute({hideResponseBody: true, hideRequestBody: true}));
 router.route(new giftbitRoutes.HealthCheckRoute("/v1/storage/healthCheck"));
 
 const authConfigPromise = giftbitRoutes.secureConfig.fetchFromS3ByEnvVar<any>("SECURE_CONFIG_BUCKET", "SECURE_CONFIG_KEY_JWT");
