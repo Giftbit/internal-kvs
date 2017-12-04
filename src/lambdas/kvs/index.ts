@@ -8,22 +8,29 @@ import {specialKeys} from "./specialKeys";
 
 export const router = new cassava.Router();
 
-router.route(new cassava.routes.LoggingRoute());
+router.route(new cassava.routes.LoggingRoute({hideResponseBody: true, hideRequestBody: true}));
 router.route(new giftbitRoutes.HealthCheckRoute("/v1/storage/healthCheck"));
 
 const authConfigPromise = giftbitRoutes.secureConfig.fetchFromS3ByEnvVar<any>("SECURE_CONFIG_BUCKET", "SECURE_CONFIG_KEY_JWT");
 const roleDefinitionsPromise = giftbitRoutes.secureConfig.fetchFromS3ByEnvVar<any>("SECURE_CONFIG_BUCKET", "SECURE_CONFIG_KEY_ROLE_DEFINITIONS");
-router.route(new giftbitRoutes.jwtauth.JwtAuthorizationRoute(authConfigPromise, roleDefinitionsPromise));
+const assumeGetSharedSecretToken = giftbitRoutes.secureConfig.fetchFromS3ByEnvVar<giftbitRoutes.secureConfig.AssumeScopeToken>("SECURE_CONFIG_BUCKET", "SECURE_CONFIG_KEY_ASSUME_STORAGE_SCOPE_TOKEN");
+router.route(new giftbitRoutes.jwtauth.JwtAuthorizationRoute(authConfigPromise, roleDefinitionsPromise, `https://${process.env["LIGHTRAIL_DOMAIN"]}${process.env["PATH_TO_MERCHANT_SHARED_SECRET"]}`, assumeGetSharedSecretToken));
+
+const defaultScope = "lightrailV1:portal";
 
 router.route("/v1/storage")
     .method("GET")
     .handler(async evt => {
         const auth: giftbitRoutes.jwtauth.AuthorizationBadge = evt.meta["auth"];
         auth.requireIds("giftbitUserId");
+        auth.requireScopes(defaultScope);
+
+        const keys = (await storedItemAccess.listKeys(auth.giftbitUserId))
+            .filter(key => !(specialKeys[key] && specialKeys[key].hidden));
 
         return {
             body: {
-                keys: await storedItemAccess.listKeys(auth.giftbitUserId)
+                keys
             },
             headers: {
                 "Cache-Control": "no-cache, no-store, must-revalidate"
@@ -40,6 +47,8 @@ router.route("/v1/storage/{key}")
         const key = evt.pathParameters.key;
         if (specialKeys[key] && specialKeys[key].readScopes) {
             auth.requireScopes(...specialKeys[key].readScopes);
+        } else {
+            auth.requireScopes(defaultScope);
         }
 
         let storedItem = await storedItemAccess.getStoredItem(auth.giftbitUserId, key);
@@ -67,6 +76,8 @@ router.route("/v1/storage/{key}")
         const key = evt.pathParameters.key;
         if (specialKeys[key] && specialKeys[key].writeScopes) {
             auth.requireScopes(...specialKeys[key].writeScopes);
+        } else {
+            auth.requireScopes(defaultScope);
         }
 
         const value = evt.body;
@@ -100,6 +111,8 @@ router.route("/v1/storage/{key}")
         const key = evt.pathParameters.key;
         if (specialKeys[key] && specialKeys[key].writeScopes) {
             auth.requireScopes(...specialKeys[key].writeScopes);
+        } else {
+            auth.requireScopes(defaultScope);
         }
 
         await storedItemAccess.deleteItem(auth.giftbitUserId, key);
