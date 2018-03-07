@@ -7,6 +7,12 @@ export const specialKeys: {[key: string]: SpecialKey} = {
         readScopes: ["lightrailV1:sharedSecret:read"],
         writeScopes: ["lightrailV1:sharedSecret:write"]
     },
+    reactionsSharedObject: {
+        encrypted: true,
+        hidden: true,
+        readScopes: ["lightrailV1:reactions:write"],    // yes, really
+        writeScopes: ["lightrailV1:reactions:write"]
+    },
     stripeAuth: {
         encrypted: true,
         hidden: true,
