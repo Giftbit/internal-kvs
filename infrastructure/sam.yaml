@@ -45,24 +45,16 @@ Resources:
   Table:
     Type: AWS::DynamoDB::Table
     Properties:
+      TableName: ImmaDumbTable
       AttributeDefinitions:
-        - AttributeName: giftbitUserId
-          AttributeType: S
         - AttributeName: key
           AttributeType: S
       KeySchema:
-        - AttributeName: giftbitUserId
-          KeyType: HASH
         - AttributeName: key
-          KeyType: RANGE
+          KeyType: HASH
       ProvisionedThroughput:
-        ReadCapacityUnits: !If [UseProductionCapacity, 70, 8]
-        WriteCapacityUnits: !If [UseProductionCapacity, 35, 8]
-      Tags:
-        - Key: ShortName
-          Value: Table
-        - Key: Service
-          Value: KVS
+        ReadCapacityUnits: 8
+        WriteCapacityUnits: 8
 
   KvsFunction:
     Type: AWS::Serverless::Function
