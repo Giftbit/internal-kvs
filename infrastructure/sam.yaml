@@ -35,7 +35,7 @@ Parameters:
     AllowedPattern: arn:aws:kms:[a-zA-Z_0-9\-]+:\d{12}:key/[a-zA-Z_0-9+=,.@\-_/]+
   StoredItemEncryptionKeyId:
     Type: String
-    Description: ID of the KMS stored items will be encrypted with
+    Description: ID of the KMS key stored items will be encrypted with. This has to be passed in because letting the CI stack create and delete KMS keys is too dangerous.
     AllowedPattern: "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
 
 Conditions:
