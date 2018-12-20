@@ -20,8 +20,8 @@ export const tableSchema: dynameh.TableSchema = {
     sortKeyType: "string"
 };
 
-export async function listKeys(giftbitUserId: string): Promise<string[]> {
-    const queryRequest = dynameh.requestBuilder.addProjection(tableSchema, dynameh.requestBuilder.buildQueryInput(tableSchema, giftbitUserId), ["key"]);
+export async function listKeys(userId: string): Promise<string[]> {
+    const queryRequest = dynameh.requestBuilder.addProjection(tableSchema, dynameh.requestBuilder.buildQueryInput(tableSchema, userId), ["key"]);
     debug && console.log("queryRequest=", queryRequest);
 
     const queryResponse = await dynamodb.query(queryRequest).promise();
@@ -31,10 +31,10 @@ export async function listKeys(giftbitUserId: string): Promise<string[]> {
     return storedItems.map(item => item.key);
 }
 
-export async function getStoredItem(giftbitUserId: string, key: string): Promise<StoredItem> {
+export async function getStoredItem(userId: string, key: string): Promise<StoredItem> {
     validateKey(key);
 
-    const getRequest = dynameh.requestBuilder.buildGetInput(tableSchema, giftbitUserId, key);
+    const getRequest = dynameh.requestBuilder.buildGetInput(tableSchema, userId, key);
     debug && console.log("getRequest=", getRequest);
 
     const getResponse = await dynamodb.getItem(getRequest).promise();
@@ -59,10 +59,10 @@ export async function setStoredItem(item: StoredItem): Promise<void> {
     debug && console.log("putResponse=", JSON.stringify(putResponse));
 }
 
-export async function deleteItem(giftbitUserId: string, key: string): Promise<void> {
+export async function deleteItem(userId: string, key: string): Promise<void> {
     validateKey(key);
 
-    const deleteRequest = dynameh.requestBuilder.buildDeleteInput(tableSchema, giftbitUserId, key);
+    const deleteRequest = dynameh.requestBuilder.buildDeleteInput(tableSchema, userId, key);
     debug && console.log("deleteRequest=", JSON.stringify(deleteRequest));
 
     const deleteResponse = await dynamodb.deleteItem(deleteRequest).promise();

@@ -16,7 +16,8 @@ Parameters:
     AllowedPattern: (\w+\.)+\w{3}
   PathToMerchantSharedSecret:
     Type: String
-    Description: Path to merchant shared jwt secret
+    Description: Deprecated.
+    Default: ""
   SecureConfigBucket:
     Type: String
     Description: Name of the S3 bucket holding the JWT secure config
@@ -69,14 +70,13 @@ Resources:
     Properties:
       CodeUri: ../dist/kvs/kvs.zip
       Handler: index.handler
-      Runtime: nodejs6.10
+      Runtime: nodejs8.10
       MemorySize: 128
       Timeout: 30 # seconds, 300 max
       Environment:
         Variables:
           DDB_TABLE: !Ref Table
           LIGHTRAIL_DOMAIN: !Ref LightrailDomain
-          PATH_TO_MERCHANT_SHARED_SECRET: !Ref PathToMerchantSharedSecret
           SECURE_CONFIG_BUCKET: !Ref SecureConfigBucket
           SECURE_CONFIG_KEY_ASSUME_STORAGE_SCOPE_TOKEN: !Ref SecureConfigKeyAssumeStorageScopeToken
           SECURE_CONFIG_KEY_JWT: !Ref SecureConfigKeyJwt
