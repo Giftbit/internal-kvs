@@ -33,7 +33,7 @@
     "chai": "^4.2.0",
     "dynameh": "^2.10.3",
     "file-loader": "^3.0.1",
-    "giftbit-cassava-routes": "git+ssh://git@github.com/Giftbit/giftbit-cassava-routes.git#semver:^10.0.1",
+    "giftbit-cassava-routes": "git+ssh://git@github.com/Giftbit/giftbit-cassava-routes.git#semver:^10.0.2",
     "json-loader": "^0.5.7",
     "local-dynamo": "^0.5.0",
     "loglevel": "^1.6.1",

@@ -145,4 +145,9 @@ router.route("/v1/storage/{key}")
     });
 
 //noinspection JSUnusedGlobalSymbols
-export const handler = router.getLambdaHandler();
+// Export the lambda handler with Sentry error logging supported.
+export const handler = giftbitRoutes.sentry.wrapLambdaHandler({
+    router,
+    logger: log.error,
+    secureConfig: giftbitRoutes.secureConfig.fetchFromS3ByEnvVar<any>("SECURE_CONFIG_BUCKET", "SECURE_CONFIG_KEY_SENTRY")
+});
