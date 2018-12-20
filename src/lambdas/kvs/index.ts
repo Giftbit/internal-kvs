@@ -1,22 +1,39 @@
 import * as cassava from "cassava";
 import * as giftbitRoutes from "giftbit-cassava-routes";
+import * as logPrefix from "loglevel-plugin-prefix";
 import * as encryption from "./encryption";
 import * as storedItemAccess from "./storedItemAccess";
 import {StoredItem} from "./StoredItem";
 import {specialKeys} from "./specialKeys";
+import {DatabaseSharedSecretProvider} from "./DatabaseSharedSecretProvider";
+import log = require("loglevel");
+
+// Prefix log messages with the level.
+logPrefix.reg(log);
+logPrefix.apply(log, {
+    format: (level, name, timestamp) => {
+        return `[${level}]`;
+    },
+});
+
+// Set the log level when running in Lambda.
+log.setLevel(log.levels.INFO);
 
 export const router = new cassava.Router();
 
-router.route(new cassava.routes.LoggingRoute({hideResponseBody: true, hideRequestBody: true}));
+router.route(new cassava.routes.LoggingRoute({
+    hideResponseBody: true,
+    hideRequestBody: true,
+    logFunction: log.info
+}));
 router.route(new giftbitRoutes.HealthCheckRoute("/v1/storage/healthCheck"));
 
 router.route(new giftbitRoutes.jwtauth.JwtAuthorizationRoute({
     authConfigPromise: giftbitRoutes.secureConfig.fetchFromS3ByEnvVar<any>("SECURE_CONFIG_BUCKET", "SECURE_CONFIG_KEY_JWT"),
     rolesConfigPromise: giftbitRoutes.secureConfig.fetchFromS3ByEnvVar<any>("SECURE_CONFIG_BUCKET", "SECURE_CONFIG_KEY_ROLE_DEFINITIONS"),
-    sharedSecretProvider: new giftbitRoutes.jwtauth.sharedSecret.RestSharedSecretProvider(
-        `https://${process.env["LIGHTRAIL_DOMAIN"]}${process.env["PATH_TO_MERCHANT_SHARED_SECRET"]}`,
-        giftbitRoutes.secureConfig.fetchFromS3ByEnvVar<giftbitRoutes.secureConfig.AssumeScopeToken>("SECURE_CONFIG_BUCKET", "SECURE_CONFIG_KEY_ASSUME_STORAGE_SCOPE_TOKEN")
-    )
+    sharedSecretProvider: new DatabaseSharedSecretProvider(),
+    infoLogFunction: log.info,
+    errorLogFunction: log.error
 }));
 
 const defaultScope = "lightrailV1:portal";
