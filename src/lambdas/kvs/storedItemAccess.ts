@@ -3,6 +3,7 @@ import * as dynameh from "dynameh";
 import {httpStatusCode, RestError} from "cassava";
 import {StoredItem} from "./StoredItem";
 import {specialKeys} from "./specialKeys";
+import log = require("loglevel");
 
 export const debug = false;
 
@@ -20,28 +21,28 @@ export const tableSchema: dynameh.TableSchema = {
     sortKeyType: "string"
 };
 
-export async function listKeys(giftbitUserId: string): Promise<string[]> {
-    const queryRequest = dynameh.requestBuilder.addProjection(tableSchema, dynameh.requestBuilder.buildQueryInput(tableSchema, giftbitUserId), ["key"]);
-    debug && console.log("queryRequest=", queryRequest);
+export async function listKeys(userId: string): Promise<string[]> {
+    const queryRequest = dynameh.requestBuilder.addProjection(tableSchema, dynameh.requestBuilder.buildQueryInput(tableSchema, userId), ["key"]);
+    log.debug("queryRequest=", queryRequest);
 
     const queryResponse = await dynamodb.query(queryRequest).promise();
-    debug && console.log("queryResponse=", queryResponse);
+    log.debug("queryResponse=", queryResponse);
 
     const storedItems = dynameh.responseUnwrapper.unwrapQueryOutput(queryResponse) as StoredItem[];
     return storedItems.map(item => item.key);
 }
 
-export async function getStoredItem(giftbitUserId: string, key: string): Promise<StoredItem> {
+export async function getStoredItem(userId: string, key: string): Promise<StoredItem> {
     validateKey(key);
 
-    const getRequest = dynameh.requestBuilder.buildGetInput(tableSchema, giftbitUserId, key);
-    debug && console.log("getRequest=", getRequest);
+    const getRequest = dynameh.requestBuilder.buildGetInput(tableSchema, userId, key);
+    log.debug("getRequest=", getRequest);
 
     const getResponse = await dynamodb.getItem(getRequest).promise();
-    debug && console.log("getResponse=", JSON.stringify(getResponse));
+    log.debug("getResponse=", JSON.stringify(getResponse));
 
     const storedItem = dynameh.responseUnwrapper.unwrapGetOutput(getResponse) as StoredItem;
-    debug && console.log("storedItem=", JSON.stringify(storedItem));
+    log.debug("storedItem=", JSON.stringify(storedItem));
 
     return storedItem;
 }
@@ -53,20 +54,20 @@ export async function setStoredItem(item: StoredItem): Promise<void> {
     validateKey(item.key);
 
     const putRequest = dynameh.requestBuilder.buildPutInput(tableSchema, item);
-    debug && console.log("putRequest=", JSON.stringify(putRequest));
+    log.debug("putRequest=", JSON.stringify(putRequest));
 
     const putResponse = await dynamodb.putItem(putRequest).promise();
-    debug && console.log("putResponse=", JSON.stringify(putResponse));
+    log.debug("putResponse=", JSON.stringify(putResponse));
 }
 
-export async function deleteItem(giftbitUserId: string, key: string): Promise<void> {
+export async function deleteItem(userId: string, key: string): Promise<void> {
     validateKey(key);
 
-    const deleteRequest = dynameh.requestBuilder.buildDeleteInput(tableSchema, giftbitUserId, key);
-    debug && console.log("deleteRequest=", JSON.stringify(deleteRequest));
+    const deleteRequest = dynameh.requestBuilder.buildDeleteInput(tableSchema, userId, key);
+    log.debug("deleteRequest=", JSON.stringify(deleteRequest));
 
     const deleteResponse = await dynamodb.deleteItem(deleteRequest).promise();
-    debug && console.log("deleteResponse=", JSON.stringify(deleteResponse));
+    log.debug("deleteResponse=", JSON.stringify(deleteResponse));
 }
 
 function validateKey(key: string): void {
