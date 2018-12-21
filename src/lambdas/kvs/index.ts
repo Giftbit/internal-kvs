@@ -1,20 +1,40 @@
-import "babel-polyfill";
 import * as cassava from "cassava";
 import * as giftbitRoutes from "giftbit-cassava-routes";
+import * as logPrefix from "loglevel-plugin-prefix";
 import * as encryption from "./encryption";
 import * as storedItemAccess from "./storedItemAccess";
 import {StoredItem} from "./StoredItem";
 import {specialKeys} from "./specialKeys";
+import {DatabaseSharedSecretProvider} from "./DatabaseSharedSecretProvider";
+import log = require("loglevel");
+
+// Prefix log messages with the level.
+logPrefix.reg(log);
+logPrefix.apply(log, {
+    format: (level, name, timestamp) => {
+        return `[${level}]`;
+    },
+});
+
+// Set the log level when running in Lambda.
+log.setLevel(log.levels.INFO);
 
 export const router = new cassava.Router();
 
-router.route(new cassava.routes.LoggingRoute({hideResponseBody: true, hideRequestBody: true}));
+router.route(new cassava.routes.LoggingRoute({
+    hideResponseBody: true,
+    hideRequestBody: true,
+    logFunction: log.info
+}));
 router.route(new giftbitRoutes.HealthCheckRoute("/v1/storage/healthCheck"));
 
-const authConfigPromise = giftbitRoutes.secureConfig.fetchFromS3ByEnvVar<any>("SECURE_CONFIG_BUCKET", "SECURE_CONFIG_KEY_JWT");
-const roleDefinitionsPromise = giftbitRoutes.secureConfig.fetchFromS3ByEnvVar<any>("SECURE_CONFIG_BUCKET", "SECURE_CONFIG_KEY_ROLE_DEFINITIONS");
-const assumeGetSharedSecretToken = giftbitRoutes.secureConfig.fetchFromS3ByEnvVar<giftbitRoutes.secureConfig.AssumeScopeToken>("SECURE_CONFIG_BUCKET", "SECURE_CONFIG_KEY_ASSUME_STORAGE_SCOPE_TOKEN");
-router.route(new giftbitRoutes.jwtauth.JwtAuthorizationRoute(authConfigPromise, roleDefinitionsPromise, `https://${process.env["LIGHTRAIL_DOMAIN"]}${process.env["PATH_TO_MERCHANT_SHARED_SECRET"]}`, assumeGetSharedSecretToken));
+router.route(new giftbitRoutes.jwtauth.JwtAuthorizationRoute({
+    authConfigPromise: giftbitRoutes.secureConfig.fetchFromS3ByEnvVar<any>("SECURE_CONFIG_BUCKET", "SECURE_CONFIG_KEY_JWT"),
+    rolesConfigPromise: giftbitRoutes.secureConfig.fetchFromS3ByEnvVar<any>("SECURE_CONFIG_BUCKET", "SECURE_CONFIG_KEY_ROLE_DEFINITIONS"),
+    sharedSecretProvider: new DatabaseSharedSecretProvider(),
+    infoLogFunction: log.info,
+    errorLogFunction: log.error
+}));
 
 const defaultScope = "lightrailV1:portal";
 
@@ -22,10 +42,10 @@ router.route("/v1/storage")
     .method("GET")
     .handler(async evt => {
         const auth: giftbitRoutes.jwtauth.AuthorizationBadge = evt.meta["auth"];
-        auth.requireIds("giftbitUserId");
+        auth.requireIds("userId");
         auth.requireScopes(defaultScope);
 
-        const keys = (await storedItemAccess.listKeys(auth.giftbitUserId))
+        const keys = (await storedItemAccess.listKeys(auth.userId))
             .filter(key => !(specialKeys[key] && specialKeys[key].hidden));
 
         return {
@@ -42,7 +62,7 @@ router.route("/v1/storage/{key}")
     .method("GET")
     .handler(async evt => {
         const auth: giftbitRoutes.jwtauth.AuthorizationBadge = evt.meta["auth"];
-        auth.requireIds("giftbitUserId");
+        auth.requireIds("userId");
 
         const key = evt.pathParameters.key;
         if (specialKeys[key] && specialKeys[key].readScopes) {
@@ -51,7 +71,7 @@ router.route("/v1/storage/{key}")
             auth.requireScopes(defaultScope);
         }
 
-        let storedItem = await storedItemAccess.getStoredItem(auth.giftbitUserId, key);
+        let storedItem = await storedItemAccess.getStoredItem(auth.userId, key);
         if (storedItem == null) {
             throw new cassava.RestError(cassava.httpStatusCode.clientError.NOT_FOUND, "Resource not found.  The resource type was understood but nothing lives there.");
         }
@@ -71,7 +91,7 @@ router.route("/v1/storage/{key}")
     .method("PUT")
     .handler(async evt => {
         const auth: giftbitRoutes.jwtauth.AuthorizationBadge = evt.meta["auth"];
-        auth.requireIds("giftbitUserId");
+        auth.requireIds("userId");
 
         const key = evt.pathParameters.key;
         if (specialKeys[key] && specialKeys[key].writeScopes) {
@@ -86,7 +106,7 @@ router.route("/v1/storage/{key}")
         }
 
         let storedItem: StoredItem = {
-            giftbitUserId: auth.giftbitUserId,
+            giftbitUserId: auth.userId,
             key,
             value
         };
@@ -106,7 +126,7 @@ router.route("/v1/storage/{key}")
     .method("DELETE")
     .handler(async evt => {
         const auth: giftbitRoutes.jwtauth.AuthorizationBadge = evt.meta["auth"];
-        auth.requireIds("giftbitUserId");
+        auth.requireIds("userId");
 
         const key = evt.pathParameters.key;
         if (specialKeys[key] && specialKeys[key].writeScopes) {
@@ -115,7 +135,7 @@ router.route("/v1/storage/{key}")
             auth.requireScopes(defaultScope);
         }
 
-        await storedItemAccess.deleteItem(auth.giftbitUserId, key);
+        await storedItemAccess.deleteItem(auth.userId, key);
 
         return {
             body: {
@@ -125,4 +145,9 @@ router.route("/v1/storage/{key}")
     });
 
 //noinspection JSUnusedGlobalSymbols
-export const handler = router.getLambdaHandler();
+// Export the lambda handler with Sentry error logging supported.
+export const handler = giftbitRoutes.sentry.wrapLambdaHandler({
+    router,
+    logger: log.error,
+    secureConfig: giftbitRoutes.secureConfig.fetchFromS3ByEnvVar<any>("SECURE_CONFIG_BUCKET", "SECURE_CONFIG_KEY_SENTRY")
+});
