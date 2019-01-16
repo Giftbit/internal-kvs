@@ -51,7 +51,7 @@ router.route("/v1/storage")
             keys = (await storedItemAccess.listKeys(auth.userId))
                 .filter(key => !(specialKeys[key] && specialKeys[key].hidden));
         } catch (err) {
-            defaultKvsErrorHandler(err)
+            throw kvsErrorFormatting(err)
         }
 
         return {
@@ -81,7 +81,7 @@ router.route("/v1/storage/{key}")
         try {
             await storedItemAccess.getStoredItem(auth.userId, key);
         } catch (err) {
-            defaultKvsErrorHandler(err);
+            throw kvsErrorFormatting(err);
         }
         if (storedItem == null) {
             throw new cassava.RestError(cassava.httpStatusCode.clientError.NOT_FOUND, "Resource not found.  The resource type was understood but nothing lives there.");
@@ -128,7 +128,7 @@ router.route("/v1/storage/{key}")
         try {
             await storedItemAccess.setStoredItem(storedItem);
         } catch (err) {
-            defaultKvsErrorHandler(err);
+            throw kvsErrorFormatting(err);
         }
 
         return {
@@ -154,7 +154,7 @@ router.route("/v1/storage/{key}")
         try {
             await storedItemAccess.deleteItem(auth.userId, key);
         } catch (err) {
-            defaultKvsErrorHandler(err);
+            throw kvsErrorFormatting(err);
         }
 
         return {
@@ -164,16 +164,15 @@ router.route("/v1/storage/{key}")
         };
     });
 
-function defaultKvsErrorHandler(err: any): void {
-    if (err instanceof AWSError) {
-        log.error(`AWS error occurred. ${JSON.stringify(err)}`);
-        if (err.retryable) {
-            throw new cassava.RestError(503, "AWS Error occurred. " + err.message);
-        } else {
-            throw err
-        }
+// Checks for if the error is an AWS retryable error.
+// Timeouts are instances of retryable errors and as such KVS will return a 503 in this case.
+function kvsErrorFormatting(err: any): any {
+    if (err instanceof AWSError && err.retryable) {
+        log.error(`AWS retryable error occurred. ${JSON.stringify(err)}`);
+        return new cassava.RestError(503, "AWS Error occurred. " + err.message);
+    } else {
+        return err;
     }
-    throw err;
 }
 
 //noinspection JSUnusedGlobalSymbols
