@@ -164,8 +164,10 @@ router.route("/v1/storage/{key}")
         };
     });
 
-// Checks for if the error is an AWS retryable error.
-// Timeouts are instances of retryable errors and as such KVS will return a 503 in this case.
+/**
+ * Checks for if the error is an AWS retryable error.
+ * Timeouts are instances of retryable errors and as such KVS will return a 503 in this case.
+ */
 function handleStoredItemAccessError(err: any): void {
     if (err instanceof AWSError && err.retryable) {
         log.error(`AWS retryable error occurred. ${JSON.stringify(err)}`);
