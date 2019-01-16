@@ -7,6 +7,7 @@ import {StoredItem} from "./StoredItem";
 import {specialKeys} from "./specialKeys";
 import {DatabaseSharedSecretProvider} from "./DatabaseSharedSecretProvider";
 import log = require("loglevel");
+import {AWSError} from "aws-sdk";
 
 // Prefix log messages with the level.
 logPrefix.reg(log);
@@ -45,8 +46,13 @@ router.route("/v1/storage")
         auth.requireIds("userId");
         auth.requireScopes(defaultScope);
 
-        const keys = (await storedItemAccess.listKeys(auth.userId))
-            .filter(key => !(specialKeys[key] && specialKeys[key].hidden));
+        let keys: string[];
+        try {
+            keys = (await storedItemAccess.listKeys(auth.userId))
+                .filter(key => !(specialKeys[key] && specialKeys[key].hidden));
+        } catch (err) {
+            defaultKvsErrorHandler(err)
+        }
 
         return {
             body: {
@@ -71,7 +77,12 @@ router.route("/v1/storage/{key}")
             auth.requireScopes(defaultScope);
         }
 
-        let storedItem = await storedItemAccess.getStoredItem(auth.userId, key);
+        let storedItem: StoredItem = null;
+        try {
+            await storedItemAccess.getStoredItem(auth.userId, key);
+        } catch (err) {
+            defaultKvsErrorHandler(err);
+        }
         if (storedItem == null) {
             throw new cassava.RestError(cassava.httpStatusCode.clientError.NOT_FOUND, "Resource not found.  The resource type was understood but nothing lives there.");
         }
@@ -113,7 +124,12 @@ router.route("/v1/storage/{key}")
         if (specialKeys[key] && specialKeys[key].encrypted) {
             storedItem = await encryption.encryptStoredItem(auth, storedItem);
         }
-        await storedItemAccess.setStoredItem(storedItem);
+
+        try {
+            await storedItemAccess.setStoredItem(storedItem);
+        } catch (err) {
+            defaultKvsErrorHandler(err);
+        }
 
         return {
             body: {
@@ -135,7 +151,11 @@ router.route("/v1/storage/{key}")
             auth.requireScopes(defaultScope);
         }
 
-        await storedItemAccess.deleteItem(auth.userId, key);
+        try {
+            await storedItemAccess.deleteItem(auth.userId, key);
+        } catch (err) {
+            defaultKvsErrorHandler(err);
+        }
 
         return {
             body: {
@@ -143,6 +163,18 @@ router.route("/v1/storage/{key}")
             }
         };
     });
+
+function defaultKvsErrorHandler(err: any): void {
+    if (err instanceof AWSError) {
+        log.error(`AWS error occurred. ${JSON.stringify(err)}`);
+        if (err.retryable) {
+            throw new cassava.RestError(503, "AWS Error occurred. " + err.message);
+        } else {
+            throw err
+        }
+    }
+    throw err;
+}
 
 //noinspection JSUnusedGlobalSymbols
 // Export the lambda handler with Sentry error logging supported.
