@@ -7,7 +7,6 @@ import {StoredItem} from "./StoredItem";
 import {specialKeys} from "./specialKeys";
 import {DatabaseSharedSecretProvider} from "./DatabaseSharedSecretProvider";
 import log = require("loglevel");
-import {AWSError} from "aws-sdk";
 
 // Prefix log messages with the level.
 logPrefix.reg(log);
@@ -46,13 +45,8 @@ router.route("/v1/storage")
         auth.requireIds("userId");
         auth.requireScopes(defaultScope);
 
-        let keys: string[];
-        try {
-            keys = (await storedItemAccess.listKeys(auth.userId))
-                .filter(key => !(specialKeys[key] && specialKeys[key].hidden));
-        } catch (err) {
-            handleStoredItemAccessError(err)
-        }
+        const keys = (await storedItemAccess.listKeys(auth.userId))
+            .filter(key => !(specialKeys[key] && specialKeys[key].hidden));
 
         return {
             body: {
@@ -77,12 +71,7 @@ router.route("/v1/storage/{key}")
             auth.requireScopes(defaultScope);
         }
 
-        let storedItem: StoredItem = null;
-        try {
-            await storedItemAccess.getStoredItem(auth.userId, key);
-        } catch (err) {
-            handleStoredItemAccessError(err);
-        }
+        let storedItem = await storedItemAccess.getStoredItem(auth.userId, key);
         if (storedItem == null) {
             throw new cassava.RestError(cassava.httpStatusCode.clientError.NOT_FOUND, "Resource not found.  The resource type was understood but nothing lives there.");
         }
@@ -124,12 +113,7 @@ router.route("/v1/storage/{key}")
         if (specialKeys[key] && specialKeys[key].encrypted) {
             storedItem = await encryption.encryptStoredItem(auth, storedItem);
         }
-
-        try {
-            await storedItemAccess.setStoredItem(storedItem);
-        } catch (err) {
-            handleStoredItemAccessError(err);
-        }
+        await storedItemAccess.setStoredItem(storedItem);
 
         return {
             body: {
@@ -151,11 +135,7 @@ router.route("/v1/storage/{key}")
             auth.requireScopes(defaultScope);
         }
 
-        try {
-            await storedItemAccess.deleteItem(auth.userId, key);
-        } catch (err) {
-            throw handleStoredItemAccessError(err);
-        }
+        await storedItemAccess.deleteItem(auth.userId, key);
 
         return {
             body: {
@@ -163,19 +143,6 @@ router.route("/v1/storage/{key}")
             }
         };
     });
-
-/**
- * Checks if the error is an AWS retryable error.
- * Dynamo timeouts are instances of retryable errors and as such KVS will return a 503.
- */
-function handleStoredItemAccessError(err: any): void {
-    if (err instanceof AWSError && err.retryable) {
-        log.error(`AWS retryable error occurred. ${JSON.stringify(err)}`);
-        throw new cassava.RestError(503, "AWS Error occurred. " + err.message);
-    } else {
-        throw err;
-    }
-}
 
 //noinspection JSUnusedGlobalSymbols
 // Export the lambda handler with Sentry error logging supported.

@@ -4,20 +4,13 @@ import {httpStatusCode, RestError} from "cassava";
 import {StoredItem} from "./StoredItem";
 import {specialKeys} from "./specialKeys";
 import log = require("loglevel");
-import {AWSError} from "aws-sdk";
-import {GiftbitRestError} from "giftbit-cassava-routes";
 
 export const debug = false;
 
 export const dynamodb = new aws.DynamoDB({
     apiVersion: "2012-08-10",
     credentials: process.env["AWS_REGION"] ? new aws.EnvironmentCredentials("AWS") : new aws.SharedIniFileCredentials({profile: "default"}),
-    region: process.env["AWS_REGION"] || "us-west-2",
-    httpOptions: {
-        // Both being 10s sets a maxium DDB timeout to be 20s.
-        timeout: 10000,
-        connectTimeout: 10000
-    }
+    region: process.env["AWS_REGION"] || "us-west-2"
 });
 
 export const tableSchema: dynameh.TableSchema = {
