@@ -72,7 +72,7 @@ Resources:
       Handler: index.handler
       Runtime: nodejs8.10
       MemorySize: 128
-      Timeout: 29 # seconds, 300 max
+      Timeout: 30 # seconds, 300 max
       Environment:
         Variables:
           DDB_TABLE: !Ref Table
