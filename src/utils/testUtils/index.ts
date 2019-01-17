@@ -18,7 +18,7 @@ export async function setupTestDynamoTable(): Promise<void> {
     try {
         await storedItemAccess.dynamodb.createTable(dynameh.requestBuilder.buildCreateTableInput(storedItemAccess.tableSchema)).promise();
     } catch (err) {
-        if (err.code == "ResourceInUseException") {
+        if (err.code === "ResourceInUseException") {
             // table already exists
         } else {
             throw err;
@@ -99,7 +99,6 @@ export const authRoute: cassava.routes.Route = new giftbitRoutes.jwtauth.JwtAuth
     },
     errorLogFunction: log.error
 });
-
 
 export interface ParsedProxyResponse<T> {
     statusCode: number;

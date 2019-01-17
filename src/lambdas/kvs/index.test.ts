@@ -20,14 +20,14 @@ describe("/v1/storage", function () {
 
     it("can list storage", async () => {
         const resp = await testUtils.testAuthedRequest<any>(router, "/v1/storage", "GET");
-        chai.assert.equal(resp.statusCode, 200)
+        chai.assert.equal(resp.statusCode, 200);
     });
 
     const key = "hello";
     const value = "world";
     it("can put object", async () => {
         const resp = await testUtils.testAuthedRequest<any>(router, `/v1/storage/${key}`, "PUT", value);
-        chai.assert.equal(resp.statusCode, 200)
+        chai.assert.equal(resp.statusCode, 200);
     });
 
     it("can get object", async () => {

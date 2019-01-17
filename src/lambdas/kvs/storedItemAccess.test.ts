@@ -14,11 +14,11 @@ describe("storedItemAccess", function () {
         (storedItemAccess as any).debug = false;
         storedItemAccess.dynamodb.endpoint = new aws.Endpoint(testingDynamo.endpoint);
 
-        await setupTestDynamoTable()
+        await setupTestDynamoTable();
     });
 
     after(async () => {
-        await tearDownTestDynamoTable()
+        await tearDownTestDynamoTable();
     });
 
     it("gets null if an item is not found", async () => {

@@ -22,7 +22,7 @@ export function installEndpointsRest(router: cassava.Router): void {
                 keys = (await storedItemAccess.listKeys(auth.userId))
                     .filter(key => !(specialKeys[key] && specialKeys[key].hidden));
             } catch (err) {
-                handleStoredItemAccessError(err)
+                handleStoredItemAccessError(err);
             }
 
             return {
