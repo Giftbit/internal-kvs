@@ -1,8 +1,8 @@
 import * as aws from "aws-sdk";
 import * as chai from "chai";
-import * as dynameh from "dynameh";
 import * as storedItemAccess from "./storedItemAccess";
 import * as testingDynamo from "../../testingDynamo";
+import {setupTestDynamoTable, tearDownTestDynamoTable} from "../../utils/testUtils";
 
 describe("storedItemAccess", function () {
 
@@ -13,13 +13,12 @@ describe("storedItemAccess", function () {
     before(async () => {
         (storedItemAccess as any).debug = false;
         storedItemAccess.dynamodb.endpoint = new aws.Endpoint(testingDynamo.endpoint);
-        await storedItemAccess.dynamodb.createTable(dynameh.requestBuilder.buildCreateTableInput(storedItemAccess.tableSchema)).promise();
+
+        await setupTestDynamoTable();
     });
 
     after(async () => {
-        await storedItemAccess.dynamodb.deleteTable({
-            TableName: storedItemAccess.tableSchema.tableName
-        });
+        await tearDownTestDynamoTable();
     });
 
     it("gets null if an item is not found", async () => {
