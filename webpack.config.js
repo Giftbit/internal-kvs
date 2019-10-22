@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const webpack = require('webpack');
 const ZipPlugin = require('zip-webpack-plugin');
 
 module.exports = function (env) {
@@ -24,9 +25,10 @@ module.exports = function (env) {
                             {
                                 loader: 'babel-loader',
                                 options: {
-                                    presets: ['es2015'],
-                                    plugins: ["transform-async-to-generator"],
-                                    compact: false
+                                    presets: [['@babel/env', {targets: {node: '10.16'}}]],
+                                    plugins: [],
+                                    compact: false,
+                                    babelrc: false
                                 }
                             }
                         ]
@@ -37,9 +39,10 @@ module.exports = function (env) {
                             {
                                 loader: 'babel-loader',
                                 options: {
-                                    presets: ['es2015'],
-                                    plugins: ["transform-async-to-generator"],
-                                    compact: false
+                                    presets: [['@babel/env', {targets: {node: '10.16'}}]],
+                                    plugins: [],
+                                    compact: false,
+                                    babelrc: false
                                 }
                             },
                             'ts-loader'
@@ -57,6 +60,7 @@ module.exports = function (env) {
                 extensions: ['.ts', '.tsx', '.js']
             },
             plugins: [
+                new webpack.DefinePlugin({"global.GENTLY": false}), // see https://github.com/felixge/node-formidable/issues/337 for why
                 new ZipPlugin({
                     path: path.join(__dirname, 'dist', fxn),
                     pathPrefix: '',

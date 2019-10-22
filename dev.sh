@@ -8,15 +8,18 @@
 STACK_NAME="dev-Kvs"
 
 # The name of an S3 bucket on your account to hold deployment artifacts.
-BUILD_ARTIFACT_BUCKET="dev-lightrailkvs-3z0wyor-deploymentartifactbucket-1kw5tu5umtqqe"
+BUILD_ARTIFACT_BUCKET="dev-lightrailkvs-d4ig0rg-deploymentartifactbucket-5g13j6uejhl1"
 
 # Parameter values for the sam template.  see: `aws cloudformation deploy help`
 PARAMETER_OVERRIDES="--parameter-overrides"
+PARAMETER_OVERRIDES+=" LightrailDomain=api.lightraildev.net"
+PARAMETER_OVERRIDES+=" PathToMerchantSharedSecret=/v1/storage/jwtSecret"
 PARAMETER_OVERRIDES+=" SecureConfigBucket=dev-lightrailsecureconfig-1q7bltwyiihpq-bucket-id162gq711cc"
+PARAMETER_OVERRIDES+=" SecureConfigKeyAssumeStorageScopeToken=assumeStorageScopeToken.json"
 PARAMETER_OVERRIDES+=" SecureConfigKeyJwt=authentication_badge_key.json"
 PARAMETER_OVERRIDES+=" SecureConfigKeyRoleDefinitions=RoleDefinitions.json"
 PARAMETER_OVERRIDES+=" SecureConfigKmsArn=arn:aws:kms:us-west-2:757264843183:key/5240d853-a89f-4510-82ba-386bf2b977dc"
-PARAMETER_OVERRIDES+=" StoredItemEncryptionKeyId=29bbfae5-9cb2-40b7-91fe-61fd970d8a73"
+PARAMETER_OVERRIDES+=" StoredItemEncryptionKeyId=998d77cc-e67b-4fb1-9418-61e7d8775423"
 PARAMETER_OVERRIDES+=" Capacity=low"
 
 
@@ -45,7 +48,12 @@ if [ "$COMMAND" = "build" ]; then
     npm run build -- $BUILD_ARGS
 
 elif [ "$COMMAND" = "delete" ]; then
-    aws cloudformation delete-stack --stack-name $STACK_NAME
+    read -r -p "Are you sure you want to delete this stack? [y/N] " response
+    case "$response" in
+        [yY][eE][sS]|[yY])
+            aws cloudformation delete-stack --stack-name $STACK_NAME
+            ;;
+    esac
 
 elif [ "$COMMAND" = "deploy" ]; then
     # Deploy all code and update the CloudFormation stack.

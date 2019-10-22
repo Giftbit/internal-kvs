@@ -3,17 +3,26 @@ import {SpecialKey} from "./SpecialKey";
 export const specialKeys: {[key: string]: SpecialKey} = {
     jwtSecret: {
         encrypted: true,
-        readScopes: ["lightrailV1:token:read"],
-        writeScopes: ["lightrailV1:token"]
+        hidden: true,
+        readScopes: ["lightrailV1:sharedSecret:read"],
+        writeScopes: ["lightrailV1:sharedSecret:write"]
     },
-    stripeApiKey: {
+    reactionsSharedObject: {
         encrypted: true,
-        readScopes: ["lightrailV1:stripeConnect:read"],
-        writeScopes: ["lightrailV1:stripeConnect"]
+        hidden: true,
+        readScopes: ["lightrailV1:reactions:write"],    // yes, really
+        writeScopes: ["lightrailV1:reactions:write"]
     },
-    stripeOauth: {
+    stripeAuth: {
         encrypted: true,
+        hidden: true,
         readScopes: ["lightrailV1:stripeConnect:read"],
-        writeScopes: ["lightrailV1:stripeConnect"]
+        writeScopes: ["lightrailV1:stripeConnect:write"]
+    },
+    turnkeyPublicConfig: {
+        encrypted: false,
+        hidden: false,
+        readScopes: [],
+        writeScopes: ["lightrailV1:portal"]
     }
 };
