@@ -7,8 +7,6 @@ import log = require("loglevel");
 import {AWSError} from "aws-sdk";
 import {GiftbitRestError} from "giftbit-cassava-routes";
 
-export const debug = false;
-
 export const dynamodb = new aws.DynamoDB({
     apiVersion: "2012-08-10",
     credentials: process.env["AWS_REGION"] ? new aws.EnvironmentCredentials("AWS") : new aws.SharedIniFileCredentials({profile: "default"}),
@@ -22,14 +20,15 @@ export const dynamodb = new aws.DynamoDB({
 
 export const tableSchema: dynameh.TableSchema = {
     tableName: process.env["DDB_TABLE"] || "Storage",
-    primaryKeyField: "giftbitUserId",
-    primaryKeyType: "string",
+    partitionKeyField: "giftbitUserId",
+    partitionKeyType: "string",
     sortKeyField: "key",
     sortKeyType: "string"
 };
 
 export async function listKeys(userId: string): Promise<string[]> {
-    const queryRequest = dynameh.requestBuilder.addProjection(tableSchema, dynameh.requestBuilder.buildQueryInput(tableSchema, userId), ["key"]);
+    const queryRequest = dynameh.requestBuilder.buildQueryInput(tableSchema, userId);
+    dynameh.requestBuilder.addProjection(tableSchema, queryRequest, ["key"]);
     log.debug("queryRequest=", queryRequest);
 
     const queryResponse = await dynamodb.query(queryRequest).promise();
@@ -70,7 +69,8 @@ export async function setStoredItem(item: StoredItem): Promise<void> {
 export async function deleteItem(userId: string, key: string): Promise<void> {
     validateKey(key);
 
-    const deleteRequest = dynameh.requestBuilder.buildDeleteInput(tableSchema, userId, key);
+    const itemToDelete: Partial<StoredItem> = {giftbitUserId: userId, key: key};
+    const deleteRequest = dynameh.requestBuilder.buildDeleteInput(tableSchema, itemToDelete);
     log.debug("deleteRequest=", JSON.stringify(deleteRequest));
 
     const deleteResponse = await dynamodb.deleteItem(deleteRequest).promise();
