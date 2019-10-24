@@ -70,7 +70,7 @@ Resources:
     Properties:
       CodeUri: ../dist/kvs/kvs.zip
       Handler: index.handler
-      Runtime: nodejs8.10
+      Runtime: nodejs10.x
       MemorySize: 128
       Timeout: 29 # seconds, 300 max
       Environment:
