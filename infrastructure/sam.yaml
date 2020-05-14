@@ -34,6 +34,10 @@ Parameters:
     Type: String
     Description: Optional ARN of the KMS encrypting the S3 bucket
     AllowedPattern: arn:aws:kms:[a-zA-Z_0-9\-]+:\d{12}:key/[a-zA-Z_0-9+=,.@\-_/]+
+  SentryDsn:
+    Type: String
+    Description: You can find your project’s DSN in the “Client Keys” section of your “Project Settings” in Sentry.
+    AllowedPattern: https://[0-9a-f]+@o[0-9a-f]+.ingest.sentry.io/[0-9]+
   StoredItemEncryptionKeyId:
     Type: String
     Description: ID of the KMS key stored items will be encrypted with. This has to be passed in because letting the CI stack create and delete KMS keys is too dangerous.
@@ -75,13 +79,14 @@ Resources:
       Timeout: 29 # seconds, 300 max
       Environment:
         Variables:
+          AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
           DDB_TABLE: !Ref Table
           LIGHTRAIL_DOMAIN: !Ref LightrailDomain
           SECURE_CONFIG_BUCKET: !Ref SecureConfigBucket
           SECURE_CONFIG_KEY_ASSUME_STORAGE_SCOPE_TOKEN: !Ref SecureConfigKeyAssumeStorageScopeToken
           SECURE_CONFIG_KEY_JWT: !Ref SecureConfigKeyJwt
           SECURE_CONFIG_KEY_ROLE_DEFINITIONS: !Ref SecureConfigKeyRoleDefinitions
-          SECURE_CONFIG_KEY_SENTRY: sentry_lambda_services.json
+          SENTRY_DSN: !Ref SentryDsn
           STORED_ITEM_ENCRYPTION_KEY_ID: !Ref StoredItemEncryptionKeyId
       Policies:
         - Version: 2012-10-17
@@ -112,7 +117,6 @@ Resources:
                 - !Sub "arn:aws:s3:::${SecureConfigBucket}/${SecureConfigKeyAssumeStorageScopeToken}"
                 - !Sub "arn:aws:s3:::${SecureConfigBucket}/${SecureConfigKeyJwt}"
                 - !Sub "arn:aws:s3:::${SecureConfigBucket}/${SecureConfigKeyRoleDefinitions}"
-                - !Sub "arn:aws:s3:::${SecureConfigBucket}/sentry_lambda_services.json"
             - Effect: Allow
               Action:
                 - kms:Decrypt
