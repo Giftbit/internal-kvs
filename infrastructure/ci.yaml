@@ -281,7 +281,7 @@ Resources:
             Action:
               - apigateway:*
             Resource: !Sub "arn:aws:apigateway:${AWS::Region}::/*"
-          - Effect Allow
+          - Effect: Allow
             Action:
               - codedeploy:CreateApplication
               - codedeploy:CreateDeployment
