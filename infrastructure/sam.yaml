@@ -10,6 +10,19 @@ Parameters:
     Description: Level of production capacity to use (high or low)
     AllowedPattern: (high|low)
     Default: low
+  DeploymentPreferenceType:
+    Type: String
+    Description: SAM traffic shifting configuration
+    AllowedValues:
+      - Canary10Percent30Minutes
+      - Canary10Percent5Minutes
+      - Canary10Percent10Minutes
+      - Canary10Percent15Minutes
+      - AllAtOnce
+      - Linear10PercentEvery10Minutes
+      - Linear10PercentEvery1Minute
+      - Linear10PercentEvery2Minutes
+      - Linear10PercentEvery3Minutes
   LightrailDomain:
     Type: String
     Description: The domain of the Lightrail REST API
@@ -79,7 +92,7 @@ Resources:
       Timeout: 29 # seconds, 300 max
       AutoPublishAlias: live
       DeploymentPreference:
-        Type: Linear10PercentEvery1Minute
+        Type: !Ref DeploymentPreferenceType
         Alarms:
           - !Ref KvsFunctionAliasErrorMetricGreaterThanZeroAlarm
           - !Ref KvsFunctionLatestVersionErrorMetricGreaterThanZeroAlarm
