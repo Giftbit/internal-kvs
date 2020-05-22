@@ -293,6 +293,7 @@ Resources:
             Action:
               - codedeploy:CreateApplication
               - codedeploy:DeleteApplication
+              - codedeploy:RegisterApplicationRevision
             Resource: !Sub "arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:application:${ProjectName}-*"
           - Effect: Allow
             Action:
