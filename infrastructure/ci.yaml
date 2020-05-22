@@ -293,10 +293,13 @@ Resources:
             Action:
               - codedeploy:CreateApplication
               - codedeploy:CreateDeployment
-              - codedeploy:CreateDeploymentGroup
               - codedeploy:DeleteApplication
-              - codedeploy:DeleteDeploymentGroup
             Resource: !Sub "arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:application:${ProjectName}-*"
+          - Effect: Allow
+            Action:
+              - codedeploy:CreateDeploymentGroup
+              - codedeploy:DeleteDeploymentGroup
+            Resource: !Sub "arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:deploymentgroup:${ProjectName}-*"
   CodePipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
