@@ -77,6 +77,12 @@ Resources:
       Runtime: nodejs10.x
       MemorySize: 128
       Timeout: 29 # seconds, 300 max
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: Linear10PercentEvery1Minute
+        Alarms:
+          - !Ref KvsFunctionAliasErrorMetricGreaterThanZeroAlarm
+          - !Ref KvsFunctionLatestVersionErrorMetricGreaterThanZeroAlarm
       Environment:
         Variables:
           AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
@@ -137,3 +143,39 @@ Resources:
           Properties:
             Path: /{proxy+}
             Method: ANY
+
+  KvsFunctionAliasErrorMetricGreaterThanZeroAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+      AlarmDescription: Lambda Function Error > 0
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${KvsFunction}:live"
+        - Name: FunctionName
+          Value: !Ref KvsFunction
+      EvaluationPeriods: 2
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+
+  KvsFunctionLatestVersionErrorMetricGreaterThanZeroAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+      AlarmDescription: Lambda Function Error > 0
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${KvsFunction}:live"
+        - Name: FunctionName
+          Value: !Ref KvsFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt KvsFunction.Version.Version
+      EvaluationPeriods: 2
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 60
+      Statistic: Sum
+      Threshold: 0

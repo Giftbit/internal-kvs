@@ -281,6 +281,14 @@ Resources:
             Action:
               - apigateway:*
             Resource: !Sub "arn:aws:apigateway:${AWS::Region}::/*"
+          - Effect Allow
+            Action:
+              - codedeploy:CreateApplication
+              - codedeploy:CreateDeployment
+              - codedeploy:CreateDeploymentGroup
+              - codedeploy:DeleteApplication
+              - codedeploy:DeleteDeploymentGroup
+            Resource: !Sub "arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:application:${ProjectName}-*"
   CodePipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
