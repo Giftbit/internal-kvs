@@ -12,21 +12,24 @@ process.on("SIGINT", function() {
 });
 
 async function main(): Promise<void> {
-    let successCount = 0;
+    const successCounts: {[bodyRaw: string]: number} = {};
     let failCount = 0;
 
     while (!shouldExit) {
         const now = Date.now();
         try {
-            await superagent.get(testUrl)
+            const res = await superagent.get(testUrl)
                 .query({
                     cacheBust: crypto.randomBytes(20).toString("hex")
                 })
                 .timeout({
-                    response: 2000,
+                    response: 4000,
                     deadline: 1000
                 });
-            successCount++;
+            if (!successCounts[res.text]) {
+                successCounts[res.text] = 0;
+            }
+            successCounts[res.text]++;
         } catch (err) {
             console.error("\n", err);
             failCount++;
@@ -34,7 +37,7 @@ async function main(): Promise<void> {
 
         readline.clearLine(process.stdout, 0);
         readline.cursorTo(process.stdout, 0);
-        process.stdout.write(`Success: ${successCount} Fail: ${failCount}`);
+        process.stdout.write(`${Object.keys(successCounts).map(k => `${k}: ${successCounts[k]}`).join(" ")} Fail: ${failCount}`);
 
         await new Promise(resolve => setTimeout(resolve, 3000 - (Date.now() - now)));
     }

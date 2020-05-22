@@ -292,11 +292,11 @@ Resources:
           - Effect: Allow
             Action:
               - codedeploy:CreateApplication
-              - codedeploy:CreateDeployment
               - codedeploy:DeleteApplication
             Resource: !Sub "arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:application:${ProjectName}-*"
           - Effect: Allow
             Action:
+              - codedeploy:CreateDeployment
               - codedeploy:CreateDeploymentGroup
               - codedeploy:DeleteDeploymentGroup
             Resource: !Sub "arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:deploymentgroup:${ProjectName}-*"
