@@ -300,6 +300,10 @@ Resources:
               - codedeploy:CreateDeploymentGroup
               - codedeploy:DeleteDeploymentGroup
             Resource: !Sub "arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:deploymentgroup:${ProjectName}-*"
+          - Effect: Allow
+            Action:
+              - codedeploy:GetDeploymentConfig
+            Resource: !Sub "arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:deploymentconfig:CodeDeployDefault.*"
   CodePipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
