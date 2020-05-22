@@ -300,6 +300,7 @@ Resources:
               - codedeploy:CreateDeployment
               - codedeploy:CreateDeploymentGroup
               - codedeploy:DeleteDeploymentGroup
+              - codedeploy:GetDeployment
             Resource: !Sub "arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:deploymentgroup:${ProjectName}-*"
           - Effect: Allow
             Action:

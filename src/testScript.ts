@@ -23,8 +23,8 @@ async function main(): Promise<void> {
                     cacheBust: crypto.randomBytes(20).toString("hex")
                 })
                 .timeout({
-                    response: 4000,
-                    deadline: 1000
+                    response: 15000,
+                    deadline: 5000
                 });
             if (!successCounts[res.text]) {
                 successCounts[res.text] = 0;

@@ -23,7 +23,7 @@ router.route(new cassava.routes.LoggingRoute({
     hideRequestBody: true,
     logFunction: log.info
 }));
-router.route(new giftbitRoutes.HealthCheckRoute("/v1/storage/healthCheck", {version: async () => "v1"}));
+router.route(new giftbitRoutes.HealthCheckRoute("/v1/storage/healthCheck", {v: async () => "2"}));
 
 router.route(new giftbitRoutes.jwtauth.JwtAuthorizationRoute({
     authConfigPromise: giftbitRoutes.secureConfig.fetchFromS3ByEnvVar<any>("SECURE_CONFIG_BUCKET", "SECURE_CONFIG_KEY_JWT"),
