@@ -90,7 +90,7 @@ Resources:
       Runtime: nodejs10.x
       MemorySize: 128
       Timeout: 29 # seconds, 300 max
-      AutoPublishAlias: live
+      AutoPublishAlias: live # see https://github.com/awslabs/serverless-application-model/blob/master/docs/safe_lambda_deployments.rst
       DeploymentPreference:
         Type: !Ref DeploymentPreferenceType
         Alarms:
