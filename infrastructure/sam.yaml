@@ -10,6 +10,19 @@ Parameters:
     Description: Level of production capacity to use (high or low)
     AllowedPattern: (high|low)
     Default: low
+  DeploymentPreferenceType:
+    Type: String
+    Description: SAM traffic shifting configuration
+    AllowedValues:
+      - Canary10Percent30Minutes
+      - Canary10Percent5Minutes
+      - Canary10Percent10Minutes
+      - Canary10Percent15Minutes
+      - AllAtOnce
+      - Linear10PercentEvery10Minutes
+      - Linear10PercentEvery1Minute
+      - Linear10PercentEvery2Minutes
+      - Linear10PercentEvery3Minutes
   LightrailDomain:
     Type: String
     Description: The domain of the Lightrail REST API
@@ -77,6 +90,12 @@ Resources:
       Runtime: nodejs10.x
       MemorySize: 128
       Timeout: 29 # seconds, 300 max
+      AutoPublishAlias: live # see https://github.com/awslabs/serverless-application-model/blob/master/docs/safe_lambda_deployments.rst
+      DeploymentPreference:
+        Type: !Ref DeploymentPreferenceType
+        Alarms:
+          - !Ref KvsFunctionAliasErrorMetricGreaterThanZeroAlarm
+          - !Ref KvsFunctionLatestVersionErrorMetricGreaterThanZeroAlarm
       Environment:
         Variables:
           AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
@@ -137,3 +156,39 @@ Resources:
           Properties:
             Path: /{proxy+}
             Method: ANY
+
+  KvsFunctionAliasErrorMetricGreaterThanZeroAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+      AlarmDescription: Lambda Function Error > 0
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${KvsFunction}:live"
+        - Name: FunctionName
+          Value: !Ref KvsFunction
+      EvaluationPeriods: 2
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+
+  KvsFunctionLatestVersionErrorMetricGreaterThanZeroAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+      AlarmDescription: Lambda Function Error > 0
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${KvsFunction}:live"
+        - Name: FunctionName
+          Value: !Ref KvsFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt KvsFunction.Version.Version
+      EvaluationPeriods: 2
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
