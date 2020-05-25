@@ -4,7 +4,7 @@ import * as giftbitRoutes from "giftbit-cassava-routes";
 import {AuthorizationBadge} from "giftbit-cassava-routes/dist/jwtauth";
 import * as storedItemAccess from "../../lambdas/kvs/storedItemAccess";
 import * as aws from "aws-sdk";
-import * as testingDynamo from "../../testingDynamo";
+import * as testingDynamo from "./testingDynamo";
 import * as dynameh from "dynameh";
 import log = require("loglevel");
 import uuid = require("uuid");

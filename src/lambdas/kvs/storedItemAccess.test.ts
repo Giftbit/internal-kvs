@@ -1,7 +1,7 @@
 import * as aws from "aws-sdk";
 import * as chai from "chai";
 import * as storedItemAccess from "./storedItemAccess";
-import * as testingDynamo from "../../testingDynamo";
+import * as testingDynamo from "../../utils/testUtils/testingDynamo";
 import {setupTestDynamoTable, tearDownTestDynamoTable} from "../../utils/testUtils";
 
 describe("storedItemAccess", function () {

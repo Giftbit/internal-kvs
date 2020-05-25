@@ -12,6 +12,8 @@ BUILD_ARTIFACT_BUCKET="dev-lightrailkvs-d4ig0rg-deploymentartifactbucket-5g13j6u
 
 # Parameter values for the sam template.  see: `aws cloudformation deploy help`
 PARAMETER_OVERRIDES="--parameter-overrides"
+PARAMETER_OVERRIDES+=" Capacity=low"
+PARAMETER_OVERRIDES+=" DeploymentPreferenceType=AllAtOnce"
 PARAMETER_OVERRIDES+=" LightrailDomain=api.lightraildev.net"
 PARAMETER_OVERRIDES+=" PathToMerchantSharedSecret=/v1/storage/jwtSecret"
 PARAMETER_OVERRIDES+=" SecureConfigBucket=dev-lightrailsecureconfig-1q7bltwyiihpq-bucket-id162gq711cc"
@@ -21,7 +23,6 @@ PARAMETER_OVERRIDES+=" SecureConfigKeyRoleDefinitions=RoleDefinitions.json"
 PARAMETER_OVERRIDES+=" SecureConfigKmsArn=arn:aws:kms:us-west-2:757264843183:key/5240d853-a89f-4510-82ba-386bf2b977dc"
 PARAMETER_OVERRIDES+=" SentryDsn=https://fb28f9ac76a84e879f7523cc07092369@o51938.ingest.sentry.io/239845"
 PARAMETER_OVERRIDES+=" StoredItemEncryptionKeyId=998d77cc-e67b-4fb1-9418-61e7d8775423"
-PARAMETER_OVERRIDES+=" Capacity=low"
 
 
 set -eu
