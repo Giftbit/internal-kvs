@@ -96,6 +96,7 @@ Resources:
         Alarms:
           - !Ref KvsFunctionAliasErrorMetricGreaterThanZeroAlarm
           - !Ref KvsFunctionLatestVersionErrorMetricGreaterThanZeroAlarm
+          - !Ref KvsApiGateway5XXGreaterThanZeroAlarm
       Environment:
         Variables:
           AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
@@ -158,7 +159,7 @@ Resources:
             Method: ANY
 
   KvsFunctionAliasErrorMetricGreaterThanZeroAlarm:
-    Type: "AWS::CloudWatch::Alarm"
+    Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmDescription: Lambda Function Error > 0
       ComparisonOperator: GreaterThanThreshold
@@ -175,7 +176,7 @@ Resources:
       Threshold: 0
 
   KvsFunctionLatestVersionErrorMetricGreaterThanZeroAlarm:
-    Type: "AWS::CloudWatch::Alarm"
+    Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmDescription: Lambda Function Error > 0
       ComparisonOperator: GreaterThanThreshold
@@ -189,6 +190,23 @@ Resources:
       EvaluationPeriods: 2
       MetricName: Errors
       Namespace: AWS/Lambda
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+
+  KvsApiGateway5XXGreaterThanZeroAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: ApiGateway 5XX > 0
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: ApiName
+          Value: !Ref AWS::StackName
+        - Name: Stage
+          Value: Prod
+      EvaluationPeriods: 2
+      MetricName: 5XXError
+      Namespace: AWS/ApiGateway
       Period: 60
       Statistic: Sum
       Threshold: 0
