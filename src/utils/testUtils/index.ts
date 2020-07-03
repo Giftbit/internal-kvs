@@ -1,18 +1,12 @@
 import * as cassava from "cassava";
 import * as chai from "chai";
+import * as dynameh from "dynameh";
 import * as giftbitRoutes from "giftbit-cassava-routes";
 import {AuthorizationBadge} from "giftbit-cassava-routes/dist/jwtauth";
 import * as storedItemAccess from "../../lambdas/kvs/storedItemAccess";
-import * as aws from "aws-sdk";
-import * as testingDynamo from "./testingDynamo";
-import * as dynameh from "dynameh";
 import log = require("loglevel");
 import uuid = require("uuid");
-
-const rolesConfig = require("./rolesConfig.json");
-
-(storedItemAccess as any).debug = false;
-storedItemAccess.dynamodb.endpoint = new aws.Endpoint(testingDynamo.endpoint);
+import rolesConfig = require("./rolesConfig.json");
 
 export async function setupTestDynamoTable(): Promise<void> {
     try {
