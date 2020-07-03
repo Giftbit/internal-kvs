@@ -16,6 +16,7 @@ storedItemAccess.dynamodb.endpoint = new aws.Endpoint(testingDynamo.endpoint);
 
 export async function setupTestDynamoTable(): Promise<void> {
     try {
+        log.debug("Creating DynamoDB table");
         await storedItemAccess.dynamodb.createTable(dynameh.requestBuilder.buildCreateTableInput(storedItemAccess.tableSchema)).promise();
     } catch (err) {
         if (err.code === "ResourceInUseException") {
@@ -27,6 +28,7 @@ export async function setupTestDynamoTable(): Promise<void> {
 }
 
 export async function tearDownTestDynamoTable(): Promise<void> {
+    log.debug("Deleting DynamoDB table");
     await storedItemAccess.dynamodb.deleteTable({TableName: storedItemAccess.tableSchema.tableName});
 }
 
