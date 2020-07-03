@@ -1,14 +1,14 @@
 import * as cassava from "cassava";
+import * as chai from "chai";
 import * as testUtils from "../../utils/testUtils";
 import {setupTestDynamoTable, tearDownTestDynamoTable} from "../../utils/testUtils";
 import {installEndpointsRest} from "./endpoints";
-import * as chai from "chai";
 
 describe("/v1/storage", function () {
     this.timeout(10000);
     const router = new cassava.Router();
 
-    before(async function () {
+    before(async () => {
         router.route(testUtils.authRoute);
         installEndpointsRest(router);
         await setupTestDynamoTable();

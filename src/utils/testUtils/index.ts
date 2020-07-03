@@ -1,21 +1,16 @@
 import * as cassava from "cassava";
 import * as chai from "chai";
+import * as dynameh from "dynameh";
 import * as giftbitRoutes from "giftbit-cassava-routes";
 import {AuthorizationBadge} from "giftbit-cassava-routes/dist/jwtauth";
 import * as storedItemAccess from "../../lambdas/kvs/storedItemAccess";
-import * as aws from "aws-sdk";
-import * as testingDynamo from "./testingDynamo";
-import * as dynameh from "dynameh";
 import log = require("loglevel");
 import uuid = require("uuid");
-
-const rolesConfig = require("./rolesConfig.json");
-
-(storedItemAccess as any).debug = false;
-storedItemAccess.dynamodb.endpoint = new aws.Endpoint(testingDynamo.endpoint);
+import rolesConfig = require("./rolesConfig.json");
 
 export async function setupTestDynamoTable(): Promise<void> {
     try {
+        log.debug("Creating DynamoDB table");
         await storedItemAccess.dynamodb.createTable(dynameh.requestBuilder.buildCreateTableInput(storedItemAccess.tableSchema)).promise();
     } catch (err) {
         if (err.code === "ResourceInUseException") {
@@ -27,6 +22,7 @@ export async function setupTestDynamoTable(): Promise<void> {
 }
 
 export async function tearDownTestDynamoTable(): Promise<void> {
+    log.debug("Deleting DynamoDB table");
     await storedItemAccess.dynamodb.deleteTable({TableName: storedItemAccess.tableSchema.tableName});
 }
 
