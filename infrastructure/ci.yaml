@@ -233,9 +233,7 @@ Resources:
             Resource: !Sub "arn:aws:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:${ProjectName}-*"
           - Effect: Allow
             Action:
-              - application-autoscaling:DeregisterScalableTarget
-              - application-autoscaling:DescribeScalableTargets
-              - application-autoscaling:RegisterScalableTarget
+              - application-autoscaling:*
             Resource: "*"
           - Effect: Allow
             Action:
