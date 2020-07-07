@@ -5,11 +5,6 @@ Transform: AWS::Serverless-2016-10-31
 Description: REST key-value store
 
 Parameters:
-  Capacity:
-    Type: String
-    Description: TODO remove this
-    AllowedPattern: (high|low)
-    Default: low
   DeploymentPreferenceType:
     Type: String
     Description: SAM traffic shifting configuration
