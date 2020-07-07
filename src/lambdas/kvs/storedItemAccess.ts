@@ -4,8 +4,6 @@ import {httpStatusCode, RestError} from "cassava";
 import {StoredItem} from "./StoredItem";
 import {specialKeys} from "./specialKeys";
 import log = require("loglevel");
-import {AWSError} from "aws-sdk";
-import {GiftbitRestError} from "giftbit-cassava-routes";
 
 export const dynamodb = new aws.DynamoDB({
     apiVersion: "2012-08-10",

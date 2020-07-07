@@ -233,6 +233,10 @@ Resources:
             Resource: !Sub "arn:aws:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:${ProjectName}-*"
           - Effect: Allow
             Action:
+              - application-autoscaling:*
+            Resource: "*"
+          - Effect: Allow
+            Action:
               - s3:GetObject
             Resource:
               - !Sub "arn:aws:s3:::codepipeline-${AWS::Region}-*/*"
@@ -248,6 +252,10 @@ Resources:
               - iam:PassRole
               - iam:PutRolePolicy
             Resource: !Sub "arn:aws:iam::${AWS::AccountId}:role/${ProjectName}-*"
+          - Effect: Allow
+            Action:
+              - iam:PassRole
+            Resource: !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable"
           - Effect: Allow
             Action:
               - lambda:AddPermission
