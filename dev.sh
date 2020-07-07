@@ -12,7 +12,6 @@ BUILD_ARTIFACT_BUCKET="dev-lightrailkvs-d4ig0rg-deploymentartifactbucket-5g13j6u
 
 # Parameter values for the sam template.  see: `aws cloudformation deploy help`
 PARAMETER_OVERRIDES="--parameter-overrides"
-PARAMETER_OVERRIDES+=" Capacity=low"
 PARAMETER_OVERRIDES+=" DeploymentPreferenceType=AllAtOnce"
 PARAMETER_OVERRIDES+=" LightrailDomain=api.lightraildev.net"
 PARAMETER_OVERRIDES+=" PathToMerchantSharedSecret=/v1/storage/jwtSecret"
