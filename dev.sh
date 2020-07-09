@@ -16,8 +16,6 @@ PARAMETER_OVERRIDES+=" DeploymentPreferenceType=AllAtOnce"
 PARAMETER_OVERRIDES+=" LightrailDomain=api.lightraildev.net"
 PARAMETER_OVERRIDES+=" PathToMerchantSharedSecret=/v1/storage/jwtSecret"
 PARAMETER_OVERRIDES+=" SecureConfigBucket=dev-lightrailsecureconfig-1q7bltwyiihpq-bucket-id162gq711cc"
-PARAMETER_OVERRIDES+=" SecureConfigKeyAssumeStorageScopeToken=assumeStorageScopeToken.json"
-PARAMETER_OVERRIDES+=" SecureConfigKeyJwt=authentication_badge_key.json"
 PARAMETER_OVERRIDES+=" SecureConfigKeyRoleDefinitions=RoleDefinitions.json"
 PARAMETER_OVERRIDES+=" SecureConfigKmsArn=arn:aws:kms:us-west-2:757264843183:key/5240d853-a89f-4510-82ba-386bf2b977dc"
 PARAMETER_OVERRIDES+=" SentryDsn=https://fb28f9ac76a84e879f7523cc07092369@o51938.ingest.sentry.io/239845"
@@ -66,8 +64,11 @@ elif [ "$COMMAND" = "deploy" ]; then
     OUTPUT_TEMPLATE_FILE="/tmp/SamDeploymentTemplate.`date "+%s"`.yaml"
     aws cloudformation package --template-file infrastructure/sam.yaml --s3-bucket $BUILD_ARTIFACT_BUCKET --output-template-file "$OUTPUT_TEMPLATE_FILE"
 
-    echo "Executing aws cloudformation deploy..."
+    echo "Executing aws cloudformation deploy in default region..."
     aws cloudformation deploy --template-file "$OUTPUT_TEMPLATE_FILE" --stack-name $STACK_NAME --capabilities CAPABILITY_IAM $PARAMETER_OVERRIDES
+
+    echo "Executing aws cloudformation deploy in us-east-1..."
+    aws cloudformation deploy --region us-east-1 --template-file "$OUTPUT_TEMPLATE_FILE" --stack-name $STACK_NAME --capabilities CAPABILITY_IAM $PARAMETER_OVERRIDES
 
     # cleanup
     rm "$OUTPUT_TEMPLATE_FILE"

@@ -8,7 +8,7 @@ describe("storedItemAccess", function () {
 
     this.timeout(10000);
 
-    const giftbitUserId = "giftbitUserId";
+    const accountId = "accountId";
 
     before(async () => {
         (storedItemAccess as any).debug = false;
@@ -22,22 +22,22 @@ describe("storedItemAccess", function () {
     });
 
     it("gets null if an item is not found", async () => {
-        const item = await storedItemAccess.getStoredItem(giftbitUserId, "nothinghere");
+        const item = await storedItemAccess.getStoredItem(accountId, "nothinghere");
         chai.assert.isNull(item);
     });
 
     it("gets the item that was set", async () => {
         await storedItemAccess.setStoredItem({
-            giftbitUserId,
+            accountId: accountId,
             key: "somethinghere",
             value: {
                 woozle: "wuzzle"
             }
         });
 
-        const item = await storedItemAccess.getStoredItem(giftbitUserId, "somethinghere");
+        const item = await storedItemAccess.getStoredItem(accountId, "somethinghere");
         chai.assert.deepEqual(item, {
-            giftbitUserId,
+            accountId: accountId,
             key: "somethinghere",
             value: {
                 woozle: "wuzzle"
@@ -45,54 +45,54 @@ describe("storedItemAccess", function () {
         });
     });
 
-    it("does not return items for a different giftbitUserId", async () => {
+    it("does not return items for a different accountId", async () => {
         await storedItemAccess.setStoredItem({
-            giftbitUserId: "differentuser",
+            accountId: "differentuser",
             key: "somethingelse",
             value: 11
         });
 
-        const item = await storedItemAccess.getStoredItem(giftbitUserId, "somethingelse");
+        const item = await storedItemAccess.getStoredItem(accountId, "somethingelse");
         chai.assert.isNull(item);
     });
 
     it("can delete set items", async () => {
         await storedItemAccess.setStoredItem({
-            giftbitUserId,
+            accountId: accountId,
             key: "somethingmore",
             value: "123123"
         });
 
-        const item = await storedItemAccess.getStoredItem(giftbitUserId, "somethingmore");
+        const item = await storedItemAccess.getStoredItem(accountId, "somethingmore");
         chai.assert.deepEqual(item, {
-            giftbitUserId,
+            accountId: accountId,
             key: "somethingmore",
             value: "123123"
         });
 
-        await storedItemAccess.deleteItem(giftbitUserId, "somethingmore");
+        await storedItemAccess.deleteItem(accountId, "somethingmore");
 
-        const item2 = await storedItemAccess.getStoredItem(giftbitUserId, "somethingmore");
+        const item2 = await storedItemAccess.getStoredItem(accountId, "somethingmore");
         chai.assert.isNull(item2);
     });
 
     it("throws no errors when deleting a non-existant item", async () => {
-        await storedItemAccess.deleteItem(giftbitUserId, "afafjhfjhgsdfjhfkjsdfkjsdfh");
+        await storedItemAccess.deleteItem(accountId, "afafjhfjhgsdfjhfkjsdfkjsdfh");
     });
 
     it("lists items for the user only", async () => {
         await storedItemAccess.setStoredItem({
-            giftbitUserId,
+            accountId: accountId,
             key: "seethistoo",
             value: {a: {a: {a: "a"}}}
         });
         await storedItemAccess.setStoredItem({
-            giftbitUserId: "somejerk",
+            accountId: "somejerk",
             key: "dontseethis",
             value: {a: {a: {a: "a"}}}
         });
 
-        const keys = await storedItemAccess.listKeys(giftbitUserId);
+        const keys = await storedItemAccess.listKeys(accountId);
         chai.assert.sameMembers(keys, ["somethinghere", "seethistoo"]);
     });
 });

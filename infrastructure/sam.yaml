@@ -29,15 +29,6 @@ Parameters:
   SecureConfigBucket:
     Type: String
     Description: Name of the S3 bucket holding the JWT secure config
-  SecureConfigKeyAssumeStorageScopeToken:
-    Type: String
-    Description: Name of the Assume Auth token in S3 that can be used to access merchant secret key in KVS
-  SecureConfigKeyJwt:
-    Type: String
-    Description: Key of the JWT secure config object in S3
-  SecureConfigKeyRoleDefinitions:
-    Type: String
-    Description: Key of the role definitions secure config object in S3
   SecureConfigKmsArn:
     Type: String
     Description: Optional ARN of the KMS encrypting the S3 bucket
@@ -51,8 +42,11 @@ Parameters:
     Description: ID of the KMS key stored items will be encrypted with. This has to be passed in because letting the CI stack create and delete KMS keys is too dangerous.
     AllowedPattern: "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
 
+Conditions:
+  IsPrimaryRegion: !Equals [!Ref "AWS::Region", "us-west-2"]
+
 Resources:
-  Table:
+  Table:  # legacy, to be deleted
     Type: AWS::DynamoDB::Table
     Properties:
       AttributeDefinitions:
@@ -118,6 +112,82 @@ Resources:
         PredefinedMetricSpecification:
           PredefinedMetricType: DynamoDBReadCapacityUtilization
 
+  StorageTable:  # the new hotness
+    Type: AWS::DynamoDB::Table
+    Condition: IsPrimaryRegion
+    Properties:
+      TableName: !Ref "AWS::StackName"
+      AttributeDefinitions:
+        - AttributeName: accountId
+          AttributeType: S
+        - AttributeName: key
+          AttributeType: S
+      KeySchema:
+        - AttributeName: accountId
+          KeyType: HASH
+        - AttributeName: key
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      SSESpecification:
+        SSEEnabled: true
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES  # required for global tables
+      Tags:
+        - Key: ShortName
+          Value: Table
+        - Key: Service
+          Value: KVS
+
+  # StorageTable auto-scaling
+  StorageTableWriteCapacityScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: IsPrimaryRegion
+    Properties:
+      MaxCapacity: 100
+      MinCapacity: 5
+      ResourceId: !Sub "table/${StorageTable}"
+      RoleARN: !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable"
+      ScalableDimension: dynamodb:table:WriteCapacityUnits
+      ServiceNamespace: dynamodb
+  StorageTableWriteScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: IsPrimaryRegion
+    Properties:
+      PolicyName: WriteAutoScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref StorageTableWriteCapacityScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 70
+        ScaleInCooldown: 60
+        ScaleOutCooldown: 60
+        PredefinedMetricSpecification:
+          PredefinedMetricType: DynamoDBWriteCapacityUtilization
+  StorageTableReadCapacityScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: IsPrimaryRegion
+    Properties:
+      MaxCapacity: 100
+      MinCapacity: 5
+      ResourceId: !Sub "table/${StorageTable}"
+      RoleARN: !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable"
+      ScalableDimension: "dynamodb:table:ReadCapacityUnits"
+      ServiceNamespace: dynamodb
+  StorageTableReadScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: IsPrimaryRegion
+    Properties:
+      PolicyName: ReadAutoScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref StorageTableReadCapacityScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 70
+        ScaleInCooldown: 60
+        ScaleOutCooldown: 60
+        PredefinedMetricSpecification:
+          PredefinedMetricType: DynamoDBReadCapacityUtilization
+
   KvsFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -136,12 +206,12 @@ Resources:
       Environment:
         Variables:
           AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
-          DDB_TABLE: !Ref Table
+          DDB_TABLE: !Ref "AWS::StackName"
           LIGHTRAIL_DOMAIN: !Ref LightrailDomain
           SECURE_CONFIG_BUCKET: !Ref SecureConfigBucket
-          SECURE_CONFIG_KEY_ASSUME_STORAGE_SCOPE_TOKEN: !Ref SecureConfigKeyAssumeStorageScopeToken
-          SECURE_CONFIG_KEY_JWT: !Ref SecureConfigKeyJwt
-          SECURE_CONFIG_KEY_ROLE_DEFINITIONS: !Ref SecureConfigKeyRoleDefinitions
+          SECURE_CONFIG_KEY_ASSUME_STORAGE_SCOPE_TOKEN: assumeStorageScopeToken.json
+          SECURE_CONFIG_KEY_JWT: authentication_badge_key.json
+          SECURE_CONFIG_KEY_ROLE_DEFINITIONS: RoleDefinitions.json
           SENTRY_DSN: !Ref SentryDsn
           STORED_ITEM_ENCRYPTION_KEY_ID: !Ref StoredItemEncryptionKeyId
       Policies:
@@ -156,8 +226,8 @@ Resources:
                 - dynamodb:PutItem
                 - dynamodb:Query
               Resource:
-                - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Table}"
-                - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Table}/*"
+                - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AWS::StackName}"
+                - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AWS::StackName}/*"
             - Effect: Allow
               Action:
                 - kms:Encrypt
@@ -165,14 +235,14 @@ Resources:
                 - kms:ReEncrypt*
                 - kms:DescribeKey
               Resource:
-                - !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${StoredItemEncryptionKeyId}"
+                - !Sub "arn:aws:kms:us-west-2:${AWS::AccountId}:key/${StoredItemEncryptionKeyId}"
             - Effect: Allow
               Action:
                 - s3:GetObject
               Resource:
-                - !Sub "arn:aws:s3:::${SecureConfigBucket}/${SecureConfigKeyAssumeStorageScopeToken}"
-                - !Sub "arn:aws:s3:::${SecureConfigBucket}/${SecureConfigKeyJwt}"
-                - !Sub "arn:aws:s3:::${SecureConfigBucket}/${SecureConfigKeyRoleDefinitions}"
+                - !Sub "arn:aws:s3:::${SecureConfigBucket}/assumeStorageScopeToken.json"
+                - !Sub "arn:aws:s3:::${SecureConfigBucket}/authentication_badge_key.json"
+                - !Sub "arn:aws:s3:::${SecureConfigBucket}/RoleDefinitions.json"
             - Effect: Allow
               Action:
                 - kms:Decrypt

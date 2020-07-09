@@ -3,6 +3,7 @@ import * as giftbitRoutes from "giftbit-cassava-routes";
 import * as logPrefix from "loglevel-plugin-prefix";
 import {DatabaseSharedSecretProvider} from "./DatabaseSharedSecretProvider";
 import {installEndpointsRest} from "./endpoints";
+import {validateDatabaseReachable} from "./storedItemAccess";
 import log = require("loglevel");
 
 // Prefix log messages with the level.
@@ -23,7 +24,9 @@ router.route(new cassava.routes.LoggingRoute({
     hideRequestBody: true,
     logFunction: log.info
 }));
-router.route(new giftbitRoutes.HealthCheckRoute("/v1/storage/healthCheck"));
+router.route(new giftbitRoutes.HealthCheckRoute("/v1/storage/healthCheck", {
+    db: validateDatabaseReachable
+}));
 
 router.route(new giftbitRoutes.jwtauth.JwtAuthorizationRoute({
     authConfigPromise: giftbitRoutes.secureConfig.fetchFromS3ByEnvVar<any>("SECURE_CONFIG_BUCKET", "SECURE_CONFIG_KEY_JWT"),

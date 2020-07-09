@@ -286,7 +286,6 @@ Resources:
           - Effect: Allow
             Action:
               - dynamodb:CreateTable
-              - dynamodb:DeleteTable
               - dynamodb:DescribeTable
               - dynamodb:ListTagsOfResource
               - dynamodb:TagResource

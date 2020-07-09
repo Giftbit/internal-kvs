@@ -18,14 +18,14 @@ export const dynamodb = new aws.DynamoDB({
 
 export const tableSchema: dynameh.TableSchema = {
     tableName: process.env["DDB_TABLE"] || "Storage",
-    partitionKeyField: "giftbitUserId",
+    partitionKeyField: "accountId",
     partitionKeyType: "string",
     sortKeyField: "key",
     sortKeyType: "string"
 };
 
-export async function listKeys(userId: string): Promise<string[]> {
-    const queryRequest = dynameh.requestBuilder.buildQueryInput(tableSchema, userId);
+export async function listKeys(accountId: string): Promise<string[]> {
+    const queryRequest = dynameh.requestBuilder.buildQueryInput(tableSchema, accountId);
     dynameh.requestBuilder.addProjection(tableSchema, queryRequest, ["key"]);
     log.debug("queryRequest=", queryRequest);
 
@@ -36,10 +36,10 @@ export async function listKeys(userId: string): Promise<string[]> {
     return storedItems.map(item => item.key);
 }
 
-export async function getStoredItem(userId: string, key: string): Promise<StoredItem> {
+export async function getStoredItem(accountId: string, key: string): Promise<StoredItem> {
     validateKey(key);
 
-    const getRequest = dynameh.requestBuilder.buildGetInput(tableSchema, userId, key);
+    const getRequest = dynameh.requestBuilder.buildGetInput(tableSchema, accountId, key);
     log.debug("getRequest=", getRequest);
 
     const getResponse = await dynamodb.getItem(getRequest).promise();
@@ -52,8 +52,8 @@ export async function getStoredItem(userId: string, key: string): Promise<Stored
 }
 
 export async function setStoredItem(item: StoredItem): Promise<void> {
-    if (!item.giftbitUserId) {
-        throw new Error("item.giftbitUserId not set");
+    if (!item.accountId) {
+        throw new Error("item.accountId not set");
     }
     validateKey(item.key);
 
@@ -64,15 +64,26 @@ export async function setStoredItem(item: StoredItem): Promise<void> {
     log.debug("putResponse=", JSON.stringify(putResponse));
 }
 
-export async function deleteItem(userId: string, key: string): Promise<void> {
+export async function deleteItem(accountId: string, key: string): Promise<void> {
     validateKey(key);
 
-    const itemToDelete: Partial<StoredItem> = {giftbitUserId: userId, key: key};
+    const itemToDelete: Partial<StoredItem> = {accountId: accountId, key: key};
     const deleteRequest = dynameh.requestBuilder.buildDeleteInput(tableSchema, itemToDelete);
     log.debug("deleteRequest=", JSON.stringify(deleteRequest));
 
     const deleteResponse = await dynamodb.deleteItem(deleteRequest).promise();
     log.debug("deleteResponse=", JSON.stringify(deleteResponse));
+}
+
+export async function validateDatabaseReachable(): Promise<string> {
+    try {
+        const req = dynameh.requestBuilder.buildDescribeTableInput(tableSchema);
+        await dynamodb.describeTable(req).promise();
+    } catch (err) {
+        log.error("Error describing table:", err);
+        throw new Error("Unreachable.");
+    }
+    return "Ok.";
 }
 
 function validateKey(key: string): void {
