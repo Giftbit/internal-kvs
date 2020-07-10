@@ -30,7 +30,7 @@ async function main(): Promise<void> {
         region: process.env["AWS_REGION"] || "us-west-2"
     });
 
-    log.info("Begging migration...");
+    log.info("Beginning migration...");
     let itemCount = 0;
     const scanReq = dynameh.requestBuilder.buildScanInput(fromSchema);
     await dynameh.scanHelper.scanByCallback(dynamodb, scanReq, async items => {
