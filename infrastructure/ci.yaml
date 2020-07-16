@@ -99,7 +99,7 @@ Resources:
               - s3:GetObjectVersion
               - s3:PutObject
             Resource:
-              - !Sub "arn:aws:s3:::codepipeline-${AWS::Region}-*/*"
+              - !Sub "arn:aws:s3:::codepipeline-*-*/*"
               - !Sub "arn:aws:s3:::${DeploymentArtifactBucket}/*"
               - !Sub "arn:aws:s3:::${ArtifactBucketUsEast1}/*"
           - Effect: Allow
@@ -180,7 +180,7 @@ Resources:
               - cloudformation:DeleteChangeSet
               - cloudformation:DescribeChangeSet
               - cloudformation:ValidateTemplate
-            Resource: !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${ProjectName}/*"
+            Resource: !Sub "arn:aws:cloudformation:*:${AWS::AccountId}:stack/${ProjectName}/*"
           - Effect: Allow
             Action:
               - codebuild:BatchGetBuilds
@@ -238,12 +238,12 @@ Resources:
             Action:
               - cloudformation:CreateChangeSet
               - cloudformation:ListChangeSets
-            Resource: !Sub "arn:aws:cloudformation:${AWS::Region}:aws:transform/*"
+            Resource: !Sub "arn:aws:cloudformation:*:aws:transform/*"
           - Effect: Allow
             Action:
               - cloudwatch:DeleteAlarms
               - cloudwatch:PutMetricAlarm
-            Resource: !Sub "arn:aws:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:${ProjectName}-*"
+            Resource: !Sub "arn:aws:cloudwatch:*:${AWS::AccountId}:alarm:${ProjectName}-*"
           - Effect: Allow
             Action:
               - application-autoscaling:*
@@ -252,7 +252,7 @@ Resources:
             Action:
               - s3:GetObject
             Resource:
-              - !Sub "arn:aws:s3:::codepipeline-${AWS::Region}-*/*"
+              - !Sub "arn:aws:s3:::codepipeline-*-*/*"
               - !Sub "arn:aws:s3:::${DeploymentArtifactBucket}/*"
           - Effect: Allow
             Action:
@@ -286,7 +286,7 @@ Resources:
               - lambda:RemovePermission
               - lambda:UpdateFunctionCode
               - lambda:UpdateFunctionConfiguration
-            Resource: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ProjectName}-*"
+            Resource: !Sub "arn:aws:lambda:*:${AWS::AccountId}:function:${ProjectName}-*"
           - Effect: Allow
             Action:
               - lambda:CreateEventSourceMapping
@@ -304,17 +304,17 @@ Resources:
               - dynamodb:TagResource
               - dynamodb:UntagResource
               - dynamodb:UpdateTable
-            Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProjectName}-*"
+            Resource: !Sub "arn:aws:dynamodb:*:${AWS::AccountId}:table/${ProjectName}-*"
           - Effect: Allow
             Action:
               - apigateway:*
-            Resource: !Sub "arn:aws:apigateway:${AWS::Region}::/*"
+            Resource: !Sub "arn:aws:apigateway:*::/*"
           - Effect: Allow
             Action:
               - codedeploy:CreateApplication
               - codedeploy:DeleteApplication
               - codedeploy:RegisterApplicationRevision
-            Resource: !Sub "arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:application:${ProjectName}-*"
+            Resource: !Sub "arn:aws:codedeploy:*:${AWS::AccountId}:application:${ProjectName}-*"
           - Effect: Allow
             Action:
               - codedeploy:CreateDeployment
@@ -322,11 +322,11 @@ Resources:
               - codedeploy:DeleteDeploymentGroup
               - codedeploy:GetDeployment
               - codedeploy:UpdateDeploymentGroup
-            Resource: !Sub "arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:deploymentgroup:${ProjectName}-*"
+            Resource: !Sub "arn:aws:codedeploy:*:${AWS::AccountId}:deploymentgroup:${ProjectName}-*"
           - Effect: Allow
             Action:
               - codedeploy:GetDeploymentConfig
-            Resource: !Sub "arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:deploymentconfig:CodeDeployDefault.*"
+            Resource: !Sub "arn:aws:codedeploy:*:${AWS::AccountId}:deploymentconfig:CodeDeployDefault.*"
   CodePipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
