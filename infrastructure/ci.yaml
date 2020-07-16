@@ -383,7 +383,7 @@ Resources:
                 TemplatePath: BuildOutputArtifact::SamDeploymentTemplate.yaml
               RunOrder: 1
             - Name: CreateChangeSetUsEast1
-              Region: ues-east-1
+              Region: us-east-1
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
