@@ -48,6 +48,7 @@ Conditions:
 Resources:
   Table:  # legacy, to be deleted
     Type: AWS::DynamoDB::Table
+    Condition: IsPrimaryRegion
     Properties:
       AttributeDefinitions:
         - AttributeName: giftbitUserId
@@ -71,6 +72,7 @@ Resources:
   # Table auto-scaling
   TableWriteCapacityScalableTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: IsPrimaryRegion
     Properties:
       MaxCapacity: 100
       MinCapacity: 5
@@ -80,6 +82,7 @@ Resources:
       ServiceNamespace: dynamodb
   TableWriteScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: IsPrimaryRegion
     Properties:
       PolicyName: WriteAutoScalingPolicy
       PolicyType: TargetTrackingScaling
@@ -92,6 +95,7 @@ Resources:
           PredefinedMetricType: DynamoDBWriteCapacityUtilization
   TableReadCapacityScalableTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: IsPrimaryRegion
     Properties:
       MaxCapacity: 100
       MinCapacity: 5
@@ -101,6 +105,7 @@ Resources:
       ServiceNamespace: dynamodb
   TableReadScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: IsPrimaryRegion
     Properties:
       PolicyName: ReadAutoScalingPolicy
       PolicyType: TargetTrackingScaling
