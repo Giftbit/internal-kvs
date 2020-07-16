@@ -45,7 +45,7 @@ Parameters:
     Default: ""
   ArtifactBucketUsEast1:
     Type: String
-    Description: S3 bucket where us-east-1 build artifacts are stored.
+    Description: S3 bucket where us-east-1 build artifacts are stored.  This template can only create buckets in its own region, thus this needs to be passed in.
     Default: ""
 
 Conditions:
@@ -254,6 +254,7 @@ Resources:
             Resource:
               - !Sub "arn:aws:s3:::codepipeline-*-*/*"
               - !Sub "arn:aws:s3:::${DeploymentArtifactBucket}/*"
+              - !Sub "arn:aws:s3:::${ArtifactBucketUsEast1}/*"
           - Effect: Allow
             Action:
               - iam:AttachRolePolicy
