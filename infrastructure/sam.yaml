@@ -116,7 +116,7 @@ Resources:
     Type: AWS::DynamoDB::Table
     Condition: IsPrimaryRegion
     Properties:
-      TableName: !Ref "AWS::StackName"
+      TableName: !Ref AWS::StackName
       AttributeDefinitions:
         - AttributeName: accountId
           AttributeType: S
@@ -206,7 +206,7 @@ Resources:
       Environment:
         Variables:
           AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
-          DDB_TABLE: !Ref "AWS::StackName"
+          DDB_TABLE: !Ref AWS::StackName
           LIGHTRAIL_DOMAIN: !Ref LightrailDomain
           SECURE_CONFIG_BUCKET: !Ref SecureConfigBucket
           SECURE_CONFIG_KEY_ASSUME_STORAGE_SCOPE_TOKEN: assumeStorageScopeToken.json

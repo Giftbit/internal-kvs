@@ -43,6 +43,10 @@ Parameters:
     Type: String
     Description: S3 bucket with our CI SSH keys.
     Default: ""
+  ArtifactBucketUsEast1:
+    Type: String
+    Description: S3 bucket where us-east-1 build artifacts are stored.
+    Default: ""
 
 Conditions:
   PullRequestAfterDeploy: !Not [!Equals [!Ref GitHubBranchDest, ""]]
@@ -54,6 +58,10 @@ Resources:
     DeletionPolicy: Delete
     Properties:
       AccessControl: Private
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 90
+            Status: Enabled
       VersioningConfiguration:
         # The guide recommends Enabled but I can't see why
         Status: Suspended
@@ -93,6 +101,7 @@ Resources:
             Resource:
               - !Sub "arn:aws:s3:::codepipeline-${AWS::Region}-*/*"
               - !Sub "arn:aws:s3:::${DeploymentArtifactBucket}/*"
+              - !Sub "arn:aws:s3:::${ArtifactBucketUsEast1}/*"
           - Effect: Allow
             Action:
               - sts:AssumeRole
@@ -113,6 +122,8 @@ Resources:
         EnvironmentVariables:
           - Name: BUILD_ARTIFACT_BUCKET
             Value: !Ref DeploymentArtifactBucket
+          - Name: BUILD_ARTIFACT_BUCKET_USEAST1
+            Value: !Ref ArtifactBucketUsEast1
           - Name: CI_KEY_BUCKET
             Value: !Ref CiKeysBucketName
           - Name: CI_KEY_ACCESS_ROLE
@@ -155,7 +166,9 @@ Resources:
               - s3:GetObject
               - s3:GetObjectVersion
               - s3:PutObject
-            Resource: !Sub "arn:aws:s3:::${DeploymentArtifactBucket}/*"
+            Resource:
+              - !Sub "arn:aws:s3:::${DeploymentArtifactBucket}/*"
+              - !Sub "arn:aws:s3:::${ArtifactBucketUsEast1}/*"
           - Effect: Allow
             Action:
               - cloudformation:CreateStack
@@ -369,6 +382,24 @@ Resources:
                 ParameterOverrides: !Ref ProjectParameterOverrides
                 TemplatePath: BuildOutputArtifact::SamDeploymentTemplate.yaml
               RunOrder: 1
+            - Name: CreateChangeSetUsEast1
+              Region: ues-east-1
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              InputArtifacts:
+                - Name: BuildOutputArtifact
+              Configuration:
+                ActionMode: CHANGE_SET_REPLACE
+                ChangeSetName: !Ref ProjectName
+                RoleArn: !GetAtt CloudFormationServiceRole.Arn
+                Capabilities: CAPABILITY_IAM
+                StackName: !Ref ProjectName
+                ParameterOverrides: !Ref ProjectParameterOverrides
+                TemplatePath: BuildOutputArtifact::SamDeploymentTemplateUsEast1.yaml
+              RunOrder: 1
             - Name: ApprovalForRelease
               ActionTypeId:
                 Category: Approval
@@ -377,6 +408,18 @@ Resources:
                 Provider: Manual
               RunOrder: 2
             - Name: ExecuteChangeSet
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                StackName: !Ref ProjectName
+                ActionMode: CHANGE_SET_EXECUTE
+                ChangeSetName: !Ref ProjectName
+              RunOrder: 3
+            - Name: ExecuteChangeSetUsEast1
+              Region: us-east-1
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -401,9 +444,15 @@ Resources:
                   FunctionName: !Ref GitHubActionFunction
                 RunOrder: 1
           - !Ref AWS::NoValue
-      ArtifactStore:
-        Type: S3
-        Location: !Ref DeploymentArtifactBucket
+      ArtifactStores:
+        - Region: us-west-2
+          ArtifactStore:
+            Type: S3
+            Location: !Ref DeploymentArtifactBucket
+        - Region: us-east-1
+          ArtifactStore:
+            Type: S3
+            Location: !Ref ArtifactBucketUsEast1
       Name: !Ref ProjectName
 
   # GitHubAction pushes from the built branch to the dest branch.

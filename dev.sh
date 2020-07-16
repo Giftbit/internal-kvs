@@ -9,6 +9,7 @@ STACK_NAME="dev-Kvs"
 
 # The name of an S3 bucket on your account to hold deployment artifacts.
 BUILD_ARTIFACT_BUCKET="dev-lightrailkvs-d4ig0rg-deploymentartifactbucket-5g13j6uejhl1"
+BUILD_ARTIFACT_BUCKET_USEAST1="artifact-bucket-manuallycreated-us-east-1"
 
 # Parameter values for the sam template.  see: `aws cloudformation deploy help`
 PARAMETER_OVERRIDES="--parameter-overrides"
@@ -62,16 +63,18 @@ elif [ "$COMMAND" = "deploy" ]; then
     npm run build
 
     OUTPUT_TEMPLATE_FILE="/tmp/SamDeploymentTemplate.`date "+%s"`.yaml"
+    OUTPUT_TEMPLATE_FILE_USEAST1="/tmp/SamDeploymentTemplate.us-east-1.`date "+%s"`.yaml"
+
     aws cloudformation package --template-file infrastructure/sam.yaml --s3-bucket $BUILD_ARTIFACT_BUCKET --output-template-file "$OUTPUT_TEMPLATE_FILE"
+    aws cloudformation package --region us-east-1 --template-file infrastructure/sam.yaml --s3-bucket $BUILD_ARTIFACT_BUCKET_USEAST1 --output-template-file "$OUTPUT_TEMPLATE_FILE_USEAST1"
 
     echo "Executing aws cloudformation deploy in default region..."
     aws cloudformation deploy --template-file "$OUTPUT_TEMPLATE_FILE" --stack-name $STACK_NAME --capabilities CAPABILITY_IAM $PARAMETER_OVERRIDES
-
-    echo "Executing aws cloudformation deploy in us-east-1..."
-    aws cloudformation deploy --region us-east-1 --template-file "$OUTPUT_TEMPLATE_FILE" --stack-name $STACK_NAME --capabilities CAPABILITY_IAM $PARAMETER_OVERRIDES
+    aws cloudformation deploy --region us-east-1 --template-file "$OUTPUT_TEMPLATE_FILE_USEAST1" --stack-name $STACK_NAME --capabilities CAPABILITY_IAM $PARAMETER_OVERRIDES
 
     # cleanup
     rm "$OUTPUT_TEMPLATE_FILE"
+    rm "$OUTPUT_TEMPLATE_FILE_USEAST1"
 
 elif [ "$COMMAND" = "invoke" ]; then
     # Invoke a lambda function.
@@ -130,8 +133,14 @@ elif [ "$COMMAND" = "upload" ]; then
         echo "Could not discover the LogicalResourceId of $FXN.  Check that there is a ${FXN_UPPER_CAMEL_CASE}Function Resource inside infrastructure/sam.yaml and check that it has been deployed."
         exit 1
     fi
+    FXN_ID_USEAST1="$(aws cloudformation describe-stack-resources --region us-east-1 --stack-name $STACK_NAME --query "StackResources[?ResourceType==\`AWS::Lambda::Function\`&&starts_with(LogicalResourceId,\`$FXN_UPPERCASE\`)].PhysicalResourceId" --output text)"
+    if [ $? -ne 0 ]; then
+        echo "Could not discover the LogicalResourceId of $FXN.  Check that there is a ${FXN_UPPER_CAMEL_CASE}Function Resource inside infrastructure/sam.yaml and check that it has been deployed."
+        exit 1
+    fi
 
-    aws lambda update-function-code --function-name $FXN_ID --zip-file fileb://./dist/$FXN/$FXN.zip
+    aws lambda update-function-code --function-name $FXN_ID --zip-file "fileb://./dist/$FXN/$FXN.zip"
+    aws lambda update-function-code --region us-east-1 --function-name $FXN_ID_USEAST1 --zip-file "fileb://./dist/$FXN/$FXN.zip"
 
 else
     echo "Error: unknown command name '$COMMAND'."
