@@ -88,7 +88,7 @@ export function installEndpointsRest(router: cassava.Router): void {
             }
 
             let storedItem: StoredItem = {
-                giftbitUserId: auth.userId,
+                accountId: auth.userId,
                 key,
                 value
             };

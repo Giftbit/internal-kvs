@@ -5,11 +5,19 @@ Transform: AWS::Serverless-2016-10-31
 Description: REST key-value store
 
 Parameters:
-  Capacity:
+  DeploymentPreferenceType:
     Type: String
-    Description: Level of production capacity to use (high or low)
-    AllowedPattern: (high|low)
-    Default: low
+    Description: SAM traffic shifting configuration
+    AllowedValues:
+      - Canary10Percent30Minutes
+      - Canary10Percent5Minutes
+      - Canary10Percent10Minutes
+      - Canary10Percent15Minutes
+      - AllAtOnce
+      - Linear10PercentEvery10Minutes
+      - Linear10PercentEvery1Minute
+      - Linear10PercentEvery2Minutes
+      - Linear10PercentEvery3Minutes
   LightrailDomain:
     Type: String
     Description: The domain of the Lightrail REST API
@@ -21,29 +29,24 @@ Parameters:
   SecureConfigBucket:
     Type: String
     Description: Name of the S3 bucket holding the JWT secure config
-  SecureConfigKeyAssumeStorageScopeToken:
-    Type: String
-    Description: Name of the Assume Auth token in S3 that can be used to access merchant secret key in KVS
-  SecureConfigKeyJwt:
-    Type: String
-    Description: Key of the JWT secure config object in S3
-  SecureConfigKeyRoleDefinitions:
-    Type: String
-    Description: Key of the role definitions secure config object in S3
   SecureConfigKmsArn:
     Type: String
     Description: Optional ARN of the KMS encrypting the S3 bucket
     AllowedPattern: arn:aws:kms:[a-zA-Z_0-9\-]+:\d{12}:key/[a-zA-Z_0-9+=,.@\-_/]+
+  SentryDsn:
+    Type: String
+    Description: You can find your project’s DSN in the “Client Keys” section of your “Project Settings” in Sentry.
+    AllowedPattern: https://[0-9a-f]+@o[0-9a-f]+.ingest.sentry.io/[0-9]+
   StoredItemEncryptionKeyId:
     Type: String
     Description: ID of the KMS key stored items will be encrypted with. This has to be passed in because letting the CI stack create and delete KMS keys is too dangerous.
     AllowedPattern: "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
 
 Conditions:
-  UseProductionCapacity: !Equals [!Ref Capacity, high]
+  IsPrimaryRegion: !Equals [!Ref "AWS::Region", "us-west-2"]
 
 Resources:
-  Table:
+  Table:  # legacy, to be deleted
     Type: AWS::DynamoDB::Table
     Properties:
       AttributeDefinitions:
@@ -57,13 +60,133 @@ Resources:
         - AttributeName: key
           KeyType: RANGE
       ProvisionedThroughput:
-        ReadCapacityUnits: !If [UseProductionCapacity, 70, 8]
-        WriteCapacityUnits: !If [UseProductionCapacity, 35, 8]
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
       Tags:
         - Key: ShortName
           Value: Table
         - Key: Service
           Value: KVS
+
+  # Table auto-scaling
+  TableWriteCapacityScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: 100
+      MinCapacity: 5
+      ResourceId: !Sub "table/${Table}"
+      RoleARN: !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable"
+      ScalableDimension: dynamodb:table:WriteCapacityUnits
+      ServiceNamespace: dynamodb
+  TableWriteScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: WriteAutoScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref TableWriteCapacityScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 70
+        ScaleInCooldown: 60
+        ScaleOutCooldown: 60
+        PredefinedMetricSpecification:
+          PredefinedMetricType: DynamoDBWriteCapacityUtilization
+  TableReadCapacityScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: 100
+      MinCapacity: 5
+      ResourceId: !Sub "table/${Table}"
+      RoleARN: !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable"
+      ScalableDimension: "dynamodb:table:ReadCapacityUnits"
+      ServiceNamespace: dynamodb
+  TableReadScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: ReadAutoScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref TableReadCapacityScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 70
+        ScaleInCooldown: 60
+        ScaleOutCooldown: 60
+        PredefinedMetricSpecification:
+          PredefinedMetricType: DynamoDBReadCapacityUtilization
+
+  StorageTable:  # the new hotness
+    Type: AWS::DynamoDB::Table
+    Condition: IsPrimaryRegion
+    Properties:
+      TableName: !Ref AWS::StackName
+      AttributeDefinitions:
+        - AttributeName: accountId
+          AttributeType: S
+        - AttributeName: key
+          AttributeType: S
+      KeySchema:
+        - AttributeName: accountId
+          KeyType: HASH
+        - AttributeName: key
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      SSESpecification:
+        SSEEnabled: true
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES  # required for global tables
+      Tags:
+        - Key: ShortName
+          Value: Table
+        - Key: Service
+          Value: KVS
+
+  # StorageTable auto-scaling
+  StorageTableWriteCapacityScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: IsPrimaryRegion
+    Properties:
+      MaxCapacity: 100
+      MinCapacity: 5
+      ResourceId: !Sub "table/${StorageTable}"
+      RoleARN: !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable"
+      ScalableDimension: dynamodb:table:WriteCapacityUnits
+      ServiceNamespace: dynamodb
+  StorageTableWriteScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: IsPrimaryRegion
+    Properties:
+      PolicyName: WriteAutoScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref StorageTableWriteCapacityScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 70
+        ScaleInCooldown: 60
+        ScaleOutCooldown: 60
+        PredefinedMetricSpecification:
+          PredefinedMetricType: DynamoDBWriteCapacityUtilization
+  StorageTableReadCapacityScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: IsPrimaryRegion
+    Properties:
+      MaxCapacity: 100
+      MinCapacity: 5
+      ResourceId: !Sub "table/${StorageTable}"
+      RoleARN: !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/dynamodb.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_DynamoDBTable"
+      ScalableDimension: "dynamodb:table:ReadCapacityUnits"
+      ServiceNamespace: dynamodb
+  StorageTableReadScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: IsPrimaryRegion
+    Properties:
+      PolicyName: ReadAutoScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref StorageTableReadCapacityScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 70
+        ScaleInCooldown: 60
+        ScaleOutCooldown: 60
+        PredefinedMetricSpecification:
+          PredefinedMetricType: DynamoDBReadCapacityUtilization
 
   KvsFunction:
     Type: AWS::Serverless::Function
@@ -73,15 +196,23 @@ Resources:
       Runtime: nodejs10.x
       MemorySize: 128
       Timeout: 29 # seconds, 300 max
+      AutoPublishAlias: live # see https://github.com/awslabs/serverless-application-model/blob/master/docs/safe_lambda_deployments.rst
+      DeploymentPreference:
+        Type: !Ref DeploymentPreferenceType
+        Alarms:
+          - !Ref KvsFunctionAliasErrorMetricGreaterThanZeroAlarm
+          - !Ref KvsFunctionLatestVersionErrorMetricGreaterThanZeroAlarm
+          - !Ref KvsApiGateway5XXGreaterThanZeroAlarm
       Environment:
         Variables:
-          DDB_TABLE: !Ref Table
+          AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+          DDB_TABLE: !Ref AWS::StackName
           LIGHTRAIL_DOMAIN: !Ref LightrailDomain
           SECURE_CONFIG_BUCKET: !Ref SecureConfigBucket
-          SECURE_CONFIG_KEY_ASSUME_STORAGE_SCOPE_TOKEN: !Ref SecureConfigKeyAssumeStorageScopeToken
-          SECURE_CONFIG_KEY_JWT: !Ref SecureConfigKeyJwt
-          SECURE_CONFIG_KEY_ROLE_DEFINITIONS: !Ref SecureConfigKeyRoleDefinitions
-          SECURE_CONFIG_KEY_SENTRY: sentry_lambda_services.json
+          SECURE_CONFIG_KEY_ASSUME_STORAGE_SCOPE_TOKEN: assumeStorageScopeToken.json
+          SECURE_CONFIG_KEY_JWT: authentication_badge_key.json
+          SECURE_CONFIG_KEY_ROLE_DEFINITIONS: RoleDefinitions.json
+          SENTRY_DSN: !Ref SentryDsn
           STORED_ITEM_ENCRYPTION_KEY_ID: !Ref StoredItemEncryptionKeyId
       Policies:
         - Version: 2012-10-17
@@ -95,8 +226,8 @@ Resources:
                 - dynamodb:PutItem
                 - dynamodb:Query
               Resource:
-                - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Table}"
-                - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Table}/*"
+                - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AWS::StackName}"
+                - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AWS::StackName}/*"
             - Effect: Allow
               Action:
                 - kms:Encrypt
@@ -104,15 +235,14 @@ Resources:
                 - kms:ReEncrypt*
                 - kms:DescribeKey
               Resource:
-                - !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${StoredItemEncryptionKeyId}"
+                - !Sub "arn:aws:kms:us-west-2:${AWS::AccountId}:key/${StoredItemEncryptionKeyId}"
             - Effect: Allow
               Action:
                 - s3:GetObject
               Resource:
-                - !Sub "arn:aws:s3:::${SecureConfigBucket}/${SecureConfigKeyAssumeStorageScopeToken}"
-                - !Sub "arn:aws:s3:::${SecureConfigBucket}/${SecureConfigKeyJwt}"
-                - !Sub "arn:aws:s3:::${SecureConfigBucket}/${SecureConfigKeyRoleDefinitions}"
-                - !Sub "arn:aws:s3:::${SecureConfigBucket}/sentry_lambda_services.json"
+                - !Sub "arn:aws:s3:::${SecureConfigBucket}/assumeStorageScopeToken.json"
+                - !Sub "arn:aws:s3:::${SecureConfigBucket}/authentication_badge_key.json"
+                - !Sub "arn:aws:s3:::${SecureConfigBucket}/RoleDefinitions.json"
             - Effect: Allow
               Action:
                 - kms:Decrypt
@@ -133,3 +263,56 @@ Resources:
           Properties:
             Path: /{proxy+}
             Method: ANY
+
+  KvsFunctionAliasErrorMetricGreaterThanZeroAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Lambda Function Error > 0
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${KvsFunction}:live"
+        - Name: FunctionName
+          Value: !Ref KvsFunction
+      EvaluationPeriods: 2
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+
+  KvsFunctionLatestVersionErrorMetricGreaterThanZeroAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Lambda Function Error > 0
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${KvsFunction}:live"
+        - Name: FunctionName
+          Value: !Ref KvsFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt KvsFunction.Version.Version
+      EvaluationPeriods: 2
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+
+  KvsApiGateway5XXGreaterThanZeroAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: ApiGateway 5XX > 0
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: ApiName
+          Value: !Ref AWS::StackName
+        - Name: Stage
+          Value: Prod
+      EvaluationPeriods: 2
+      MetricName: 5XXError
+      Namespace: AWS/ApiGateway
+      Period: 60
+      Statistic: Sum
+      Threshold: 0

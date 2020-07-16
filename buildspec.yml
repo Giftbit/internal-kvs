@@ -25,7 +25,13 @@ phases:
          --template-file infrastructure/sam.yaml
          --s3-bucket $BUILD_ARTIFACT_BUCKET
          --output-template-file SamDeploymentTemplate.yaml
+      - aws cloudformation package
+         --region us-east-1
+         --template-file infrastructure/sam.yaml
+         --s3-bucket $BUILD_ARTIFACT_BUCKET_USEAST1
+         --output-template-file SamDeploymentTemplateUsEast1.yaml
 artifacts:
   type: zip
   files:
     - SamDeploymentTemplate.yaml
+    - SamDeploymentTemplateUsEast1.yaml
