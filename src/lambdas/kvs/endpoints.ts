@@ -20,7 +20,7 @@ export function installEndpointsRest(router: cassava.Router): void {
             let keys: string[];
             try {
                 keys = (await storedItemAccess.listKeys(auth.userId))
-                    .filter(key => !(specialKeys[key] && specialKeys[key].hidden));
+                    .filter(key => !(specialKeys[key]?.hidden));
             } catch (err) {
                 handleStoredItemAccessError(err);
             }
@@ -42,7 +42,7 @@ export function installEndpointsRest(router: cassava.Router): void {
             auth.requireIds("userId");
 
             const key = evt.pathParameters.key;
-            if (specialKeys[key] && specialKeys[key].readScopes) {
+            if (specialKeys[key]?.readScopes) {
                 auth.requireScopes(...specialKeys[key].readScopes);
             } else {
                 auth.requireScopes(defaultScope);
@@ -76,7 +76,7 @@ export function installEndpointsRest(router: cassava.Router): void {
             auth.requireIds("userId");
 
             const key = evt.pathParameters.key;
-            if (specialKeys[key] && specialKeys[key].writeScopes) {
+            if (specialKeys[key]?.writeScopes) {
                 auth.requireScopes(...specialKeys[key].writeScopes);
             } else {
                 auth.requireScopes(defaultScope);
@@ -92,7 +92,7 @@ export function installEndpointsRest(router: cassava.Router): void {
                 key,
                 value
             };
-            if (specialKeys[key] && specialKeys[key].encrypted) {
+            if (specialKeys[key]?.encrypted) {
                 storedItem = await encryption.encryptStoredItem(auth, storedItem);
             }
 
@@ -116,7 +116,7 @@ export function installEndpointsRest(router: cassava.Router): void {
             auth.requireIds("userId");
 
             const key = evt.pathParameters.key;
-            if (specialKeys[key] && specialKeys[key].writeScopes) {
+            if (specialKeys[key]?.writeScopes) {
                 auth.requireScopes(...specialKeys[key].writeScopes);
             } else {
                 auth.requireScopes(defaultScope);
