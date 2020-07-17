@@ -305,7 +305,9 @@ Resources:
               - dynamodb:TagResource
               - dynamodb:UntagResource
               - dynamodb:UpdateTable
-            Resource: !Sub "arn:aws:dynamodb:*:${AWS::AccountId}:table/${ProjectName}-*"
+            Resource:
+              - !Sub "arn:aws:dynamodb:*:${AWS::AccountId}:table/${ProjectName}"
+              - !Sub "arn:aws:dynamodb:*:${AWS::AccountId}:table/${ProjectName}-*"
           - Effect: Allow
             Action:
               - apigateway:*
