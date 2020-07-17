@@ -3,6 +3,10 @@ import * as dynameh from "dynameh";
 import log = require("loglevel");
 import logPrefix = require("loglevel-plugin-prefix");
 
+// Migrates data from the old KVS table (which had a random name)
+// to the new table which take the name of the stack.  Also migrates
+// over the key structure while we're at it.
+
 const fromTable = "dev-Kvs-Table-167SCXFBAF4K3";
 const toTable = "dev-Kvs";
 const awsProfile = "default";

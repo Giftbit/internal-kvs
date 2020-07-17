@@ -117,6 +117,11 @@ Resources:
         PredefinedMetricSpecification:
           PredefinedMetricType: DynamoDBReadCapacityUtilization
 
+  # The table that stores the items is only created in one region.
+  # All of the replicas have to be created afterwards either with a
+  # shell command or in the web console.  The replica will have the
+  # same name as the original table, which is why we specify the name
+  # to be the same as the stack name.
   StorageTable:  # the new hotness
     Type: AWS::DynamoDB::Table
     Condition: IsPrimaryRegion
