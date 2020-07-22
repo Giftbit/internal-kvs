@@ -326,3 +326,50 @@ Resources:
       Period: 60
       Statistic: Sum
       Threshold: 0
+
+  Certificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Sub "kvs.internal.${LightrailDomain}"
+      ValidationMethod: DNS
+
+  CustomDomain:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      RegionalCertificateArn: !Ref Certificate
+      DomainName: !Sub "kvs.internal.${LightrailDomain}"
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+
+  RegionalHealthcheck:
+    Type: AWS::Route53::HealthCheck
+    Properties:
+      HealthCheckConfig:
+        Port: "443"
+        Type: HTTPS
+        ResourcePath: /Prod/v2/healthCheck
+        FullyQualifiedDomainName: !Sub ${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com
+        RequestInterval: "30"
+        FailureThreshold: "1"
+        Regions:
+          - !Ref AWS::Region
+          - us-east-1
+      HealthCheckTags:
+        - Key: Name
+         Value: !Sub "kvs-${AWS::Region}"
+        - Key: Service
+         Value: KVS
+
+  Record:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: !Sub "kvs.internal.${LightrailDomain}"
+      Region: !Ref AWS::Region
+      SetIdentifier: !Ref AWS::Region
+      Type: A
+      HostedZoneId: ZHBGMHAEU4EDM # TODO don't hardcode, use !Ref HostedZoneId
+      HealthCheckId: !Ref RegionalHealthcheck
+      AliasTarget:
+        DNSName: !GetAtt CustomDomain.RegionalDomainName
+        HostedZoneId: !GetAtt CustomDomain.RegionalHostedZoneId
