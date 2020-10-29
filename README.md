@@ -1,12 +1,9 @@
-# giftbit-kvs
+# internal-kvs
 REST key-value store
+## Development
 
-## Deployment
+You'll need Node (tested with 10.16), Docker and aws-cli.  Install dependencies with `npm i`.
 
-On dev:
+Run the unit tests with `npm run test`.  Run the linter with `npm run lint`.  I guess it doesn't really matter if you track mud on the carpet when the house is about to be town down anyways, but still, it feels rude.
 
-```bash
-aws-profile infrastructure_admin ./dev.sh deploy
-```
-
-For everything else use CI.
+Deploy to dev with `./dev.sh deploy`.  There are other commands in that script but you don't really need them.  Deploy to staging by committing to the staging branch and approving the CodePipeline in the staging AWS account.  When the staging deployment completes a PR from staging to master will be opened automatically.  Deploy to production by merging that PR and approving the CodePipeline in the production account.
