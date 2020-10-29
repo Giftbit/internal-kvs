@@ -2,7 +2,7 @@
 REST key-value store
 ## Development
 
-You'll need Node (tested with 10.16), Docker and aws-cli.  Install dependencies with `npm i`.
+You'll need Node (tested with 10.16) and aws-cli.  Install dependencies with `npm i`.
 
 Run the unit tests with `npm run test`.  Run the linter with `npm run lint`.  I guess it doesn't really matter if you track mud on the carpet when the house is about to be town down anyways, but still, it feels rude.
 
