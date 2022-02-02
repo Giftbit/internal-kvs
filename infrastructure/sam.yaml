@@ -21,7 +21,7 @@ Parameters:
   LightrailDomain:
     Type: String
     Description: The domain of the Lightrail REST API
-    AllowedPattern: (\w+\.)+\w{3}
+    AllowedPattern: (\w+\.)+\w+
   PathToMerchantSharedSecret:
     Type: String
     Description: Deprecated.  This can be removed from CI.
